@@ -7,9 +7,8 @@ input_dir=../../data/preprocessing_framenet
 setting_prefix=all
 n_splits=3
 
-d1=${setting}_${n_splits}
 python ${source_dir}/make_dataset.py \
     --input_file ${input_dir}/stanza/exemplars.jsonl \
-    --output_dir ${data_dir}/dataset/${d1} \
+    --output_dir ${data_dir}/dataset \
     --setting_prefix ${setting_prefix} \
     --n_splits ${n_splits}

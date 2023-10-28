@@ -83,20 +83,20 @@ def main(args):
 
     df = decide_sets(df, args.setting_prefix, args.n_splits)
 
-    for n in range(args.n_splits):
+    for n in tqdm(range(args.n_splits)):
         setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
         output_dir = args.output_dir / setting
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        for split in tqdm(["test", "dev", "train"]):
+        for split in ["test", "dev", "train"]:
             df_split = df[df[setting] == split].copy()
             write_jsonl(
                 df_split.to_dict("records"),
                 output_dir / f"exemplars_{split}.jsonl",
             )
             vf2pos, vf2neg = make_vf_dict(df_split)
-            write_json(vf2pos, args.output_dir / f"vf2pos_{split}.json")
-            write_json(vf2neg, args.output_dir / f"vf2neg_{split}.json")
+            write_json(vf2pos, output_dir / f"vf2pos_{split}.json")
+            write_json(vf2neg, output_dir / f"vf2neg_{split}.json")
 
 
 if __name__ == "__main__":
