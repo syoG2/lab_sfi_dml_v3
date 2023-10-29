@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from sfidml.utils.data_utils import read_jsonl, write_json, write_jsonl
+from sfidml.utils.data_utils import read_jsonl, write_jsonl
 
 
 def _make_n_splits(v_list, n_splits):
@@ -53,15 +53,6 @@ def decide_sets(df, setting_prefix, n_splits):
     return df
 
 
-def make_vf_dict(df):
-    vf2pos, vf2neg = {}, {}
-    for vf in tqdm(sorted(set(df["verb_frame"]))):
-        frame = "_".join(vf.split("_")[1:])
-        vf2pos[vf] = list(df[df["frame"] == frame]["ex_idx"])
-        vf2neg[vf] = list(df[df["frame"] != frame]["ex_idx"])
-    return vf2pos, vf2neg
-
-
 def main(args):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -94,9 +85,6 @@ def main(args):
                 df_split.to_dict("records"),
                 output_dir / f"exemplars_{split}.jsonl",
             )
-            vf2pos, vf2neg = make_vf_dict(df_split)
-            write_json(vf2pos, output_dir / f"vf2pos_{split}.json")
-            write_json(vf2neg, output_dir / f"vf2neg_{split}.json")
 
 
 if __name__ == "__main__":
