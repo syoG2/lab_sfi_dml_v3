@@ -11,14 +11,15 @@ class OnestepClustering:
         z = linkage(
             pdist(vec_array), method=self.clustering, preserve_input=False
         )
-        self.params = {"th": z[-len(set(df["frame"])) + 1][2] + 1e-6}
+        params = {"th": z[-len(set(df["frame"])) + 1][2] + 1e-6}
+        return params
 
-    def _clustering(self, vec_array):
+    def _clustering(self, vec_array, params):
         z = linkage(
             pdist(vec_array), method=self.clustering, preserve_input=False
         )
-        return fcluster(z, t=self.params["th"], criterion="distance")
+        return fcluster(z, t=params["th"], criterion="distance")
 
-    def step(self, df, vec_array):
-        df["frame_cluster"] = self._clustering(vec_array)
+    def step(self, df, vec_array, params):
+        df["frame_cluster"] = self._clustering(vec_array, params)
         return df

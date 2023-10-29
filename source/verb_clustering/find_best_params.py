@@ -38,12 +38,13 @@ def main(args):
             df_vec, vec_array = read_embedding(
                 args.input_dir, "dev", alpha, runs
             )
-            clustering.make_params(df_vec, vec_array)
-
+            params = clustering.make_params(df_vec, vec_array)
             if args.clustering_name == "onestep":
-                df_output = clustering.step(df_vec, vec_array)
+                df_output = clustering.step(df_vec, vec_array, params)
             elif args.clustering_name == "twostep":
-                df_output = clustering.step(df_vec, vec_array, vec_array)
+                df_output = clustering.step(
+                    df_vec, vec_array, vec_array, params
+                )
 
             true = df_output.groupby("frame")["ex_idx"].agg(list).tolist()
             pred = (
@@ -60,12 +61,13 @@ def main(args):
             df_vec, vec_array = read_embedding(
                 args.input_dir, "dev", alpha, best_runs
             )
-            clustering.make_params(df_vec, vec_array)
-
+            params = clustering.make_params(df_vec, vec_array)
             if args.clustering_name == "onestep":
-                df_output = clustering.step(df_vec, vec_array)
+                df_output = clustering.step(df_vec, vec_array, params)
             elif args.clustering_name == "twostep":
-                df_output = clustering.step(df_vec, vec_array, vec_array)
+                df_output = clustering.step(
+                    df_vec, vec_array, vec_array, params
+                )
 
             true = df_output.groupby("frame")["ex_idx"].agg(list).tolist()
             pred = (

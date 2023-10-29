@@ -9,7 +9,7 @@ from scipy.spatial.distance import pdist
 from scipy.special import comb
 from sklearn.metrics import confusion_matrix
 
-from sfidml.f_induc.adjusted_xmeans import adjusted_xmeans
+from dump.adjusted_xmeans import adjusted_xmeans
 
 
 class TwostepClustering:
@@ -22,14 +22,14 @@ class TwostepClustering:
         verb_vec_array = vec_array[df_verb["vec_id"]]
         return df_verb, verb_vec_array
 
-    def _clustering_1st(self, vec_array):
+    def _clustering_1st(self, vec_array, params):
         if self.clustering_method1 == "average":
             if len(vec_array) >= 2:
                 z = linkage(
                     pdist(vec_array), method="average", preserve_input=False
                 )
                 cluster_array = fcluster(
-                    z, t=self.params["lth"], criterion="distance"
+                    z, t=params["lth"], criterion="distance"
                 )
             else:
                 cluster_array = np.array([1])
@@ -39,24 +39,7 @@ class TwostepClustering:
                 vec_array,
                 init_center,
                 ccore=False,
-                kmax=self.params["kmax"],
-                random_state=0,
-            )
-            xm.process()
-            cluster_array = np.array([-1] * len(vec_array))
-            for idx, clusters in enumerate(xm.get_clusters()):
-                for sent_idx in clusters:
-                    cluster_array[sent_idx] = idx + 1
-        elif self.clustering_method1 == "axmeans":
-            init_center = kmeans_plusplus_initializer(
-                vec_array, 1, random_state=0
-            ).initialize()
-            xm = adjusted_xmeans(
-                vec_array,
-                self.params["cth"],
-                init_center,
-                ccore=False,
-                kmax=self.params["kmax"],
+                kmax=params["kmax"],
                 random_state=0,
             )
             xm.process()
@@ -81,16 +64,18 @@ class TwostepClustering:
             count += 1
         return vec_list, pd.concat(df_list, axis=0)
 
-    def _clustering_2nd(self, vec_array):
+    def _clustering_2nd(self, vec_array, params):
         z = linkage(
             pdist(vec_array),
             method=self.clustering_method2,
             preserve_input=False,
         )
-        cluster_array = fcluster(z, t=self._decide_t(z), criterion="distance")
+        cluster_array = fcluster(
+            z, t=self._decide_t(z, params["gth"]), criterion="distance"
+        )
         return cluster_array
 
-    def _decide_t(self, z):
+    def _decide_t(self, z, gth):
         n_sides, n_points = 0, len(z) + 1
         for i in range(len(z)):
             if n_points <= z[i, 0]:
@@ -103,7 +88,7 @@ class TwostepClustering:
                 n_sides -= pre_n_sides1
             n_sides += comb(int(z[i, 3]), 2, exact=True)
             probs = n_sides / comb(n_points, 2, exact=True)
-            if probs >= self.params["gth"]:
+            if probs >= gth:
                 t = z[i, 2]
                 break
         return t
@@ -116,7 +101,7 @@ class TwostepClustering:
         return pd.DataFrame(cm, index=labels, columns=labels)
 
     def make_params(self, df, vec_array):
-        self.params = {}
+        params = {}
         if self.clustering_method1 == "average":
             lth_list = []
             for verb in sorted(set(df["verb"])):
@@ -144,65 +129,30 @@ class TwostepClustering:
                     lth_list.append(lth_dict)
 
             df_lth = pd.DataFrame(lth_list).sort_values("lth", ascending=False)
-            self.params["lth"] = (
+            params["lth"] = (
                 df_lth["lth"][
                     : len(set(df["verb_frame"])) - len(set(df["verb"])) + 1
                 ].values[-1]
                 + 1e-6
             )
-        elif self.clustering_method1 == "axmeans":
-            self.params["kmax"] = max(
-                df.groupby("verb").agg(set)["frame"].apply(lambda x: len(x))
-            )
-
-            verb_vec_dict = {}
-            for verb in sorted(set(df["verb"])):
-                verb_vec_dict[verb] = vec_array[
-                    df[df["verb"] == verb]["vec_id"]
-                ]
-            sum_n_frames = len(set(df["verb_frame"]))
-
-            c = 1
-            while 0 <= c <= 2:
-                sum_n_clusters = 0
-                for verb, verb_vec_array in verb_vec_dict.items():
-                    init_center = kmeans_plusplus_initializer(
-                        verb_vec_array, 1, random_state=0
-                    ).initialize()
-                    xm = adjusted_xmeans(
-                        verb_vec_array,
-                        c,
-                        init_center,
-                        ccore=False,
-                        kmax=self.params["kmax"],
-                        random_state=0,
-                    )
-                    xm.process()
-                    sum_n_clusters += len(xm.get_clusters())
-
-                if (sum_n_clusters < sum_n_frames) and (c <= 1):
-                    c -= 0.1
-                elif (sum_n_clusters > sum_n_frames) and (c >= 1):
-                    c += 0.1
-                else:
-                    break
-            self.params["cth"] = c
-
         elif self.clustering_method1 == "xmeans":
-            self.params["kmax"] = max(
+            params["kmax"] = max(
                 df.groupby("verb").agg(set)["frame"].apply(lambda x: len(x))
             )
 
         vf2f = {vf: f for vf, f in zip(df["verb_frame"], df["frame"])}
-        self.params["gth"] = sum(
+        params["gth"] = sum(
             [comb(i, 2, exact=True) for i in Counter(vf2f.values()).values()]
         ) / comb(len(vf2f.values()), 2, exact=True)
+        return params
 
-    def step(self, df, vec_array1, vec_array2):
+    def step(self, df, vec_array1, vec_array2, params):
         vec_array_2nd, df_2nd_list = [], []
         for verb in sorted(set(df["verb"])):
             df_1st, vec_array_1st = self._make_vec_1st(df, vec_array1, verb)
-            df_1st.loc[:, "plu_local"] = self._clustering_1st(vec_array_1st)
+            df_1st.loc[:, "plu_local"] = self._clustering_1st(
+                vec_array_1st, params
+            )
             _vec_array_2nd, _df_2nd = self._make_vec_2nd(
                 df_1st, vec_array2, len(vec_array_2nd)
             )
@@ -213,7 +163,7 @@ class TwostepClustering:
 
         map_1to2 = {
             c1 + 1: c2
-            for c1, c2 in enumerate(self._clustering_2nd(vec_array_2nd))
+            for c1, c2 in enumerate(self._clustering_2nd(vec_array_2nd, params))
         }
         df_2nd["frame_cluster"] = df_2nd["plu_global"].map(map_1to2)
         return df_2nd
