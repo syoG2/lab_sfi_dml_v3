@@ -28,12 +28,7 @@ from sfidml.f_induc.model import (
 )
 from sfidml.f_induc.ranking import SimilarityRanking
 from sfidml.modules.score_ranking import calc_ranking_scores
-from sfidml.utils.data_utils import (
-    read_json,
-    read_jsonl,
-    write_json,
-    write_jsonl,
-)
+from sfidml.utils.data_utils import read_jsonl, write_json, write_jsonl
 from sfidml.utils.model_utils import fix_seed
 
 
@@ -150,7 +145,7 @@ def main(args):
             #     df_dev,
             #     args.pretrained_model_name,
             #     args.vec_type,
-            #     model,
+            #     model.pretrained_model,
             #     args.batch_size,
             # )
 
@@ -168,7 +163,7 @@ def main(args):
         #     df_dev,
         #     args.pretrained_model_name,
         #     args.vec_type,
-        #     model,
+        #     model.pretrained_model,
         #     args.batch_size,
         # )
         # log_dict = {"dev-" + k: v for k, v in ranking_scores_dev.items()}
@@ -176,7 +171,7 @@ def main(args):
         log_list.append(log_dict)
 
     write_jsonl(log_list, args.output_dir / "metrics.jsonl")
-    write_jsonl([vars(args)], args.output_dir / "params.jsonl")
+    write_json(vars(args), args.output_dir / "params.json")
     if "classification" in args.model_name:
         write_json(ds_train.frame2label, args.output_dir / "frame2label.json")
 
