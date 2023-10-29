@@ -107,19 +107,16 @@ class SiameseDataset(Dataset):
     def make_dataset(self):
         self.out_inputs = []
         for df_dict in self.df.to_dict("records"):
+            ex_idx = df_dict["ex_idx"]
+            frame = df_dict["frame"]
             true = random.choice([0, 1])
             if true == 1:
-                candidates = [
-                    e
-                    for e in self.f2pos[df_dict["frame"]]
-                    if e != df_dict["ex_idx"]
-                ]
+                opts = [idx for idx in self.f2pos[frame] if idx != ex_idx]
             else:
-                candidates = self.f2neg[df_dict["frame"]]
+                opts = self.f2neg[frame]
 
-            ex_idx = df_dict["ex_idx"]
-            if len(candidates) != 0:
-                ex_idx2 = random.choice(candidates)
+            if len(opts) != 0:
+                ex_idx2 = random.choice(opts)
             else:
                 continue
 
@@ -182,19 +179,15 @@ class TripletDataset(Dataset):
     def make_dataset(self):
         self.out_inputs = []
         for df_dict in self.df.to_dict("records"):
-            candidates_pos = [
-                e
-                for e in self.f2pos[df_dict["frame"]]
-                if e != df_dict["ex_idx"]
-            ]
-            candidates_neg = self.f2neg[df_dict["frame"]]
-
             ex_idx = df_dict["ex_idx"]
-            if (len(candidates_pos) != 0) and (len(candidates_neg) != 0):
-                ex_pos = random.choice(candidates_pos)
-                ex_neg = random.choice(candidates_neg)
+            frame = df_dict["frame"]
+            opts_pos = [idx for idx in self.f2pos[frame] if idx != ex_idx]
+            opts_neg = self.f2neg[frame]
+
+            if (len(opts_pos) != 0) and (len(opts_neg) != 0):
+                ex_pos = random.choice(opts_pos)
+                ex_neg = random.choice(opts_neg)
             else:
-                print("***")
                 continue
 
             out_dict = {
