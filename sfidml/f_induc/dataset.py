@@ -60,16 +60,15 @@ class BaseDataset(Dataset):
 
 
 class SiameseDataset(Dataset):
-    def __init__(self, df, pretrained_model_name, vec_type, vf2pos, vf2neg):
+    def __init__(self, df, pretrained_model_name, vec_type):
         self.df = df
         self.pretrained_model_name = pretrained_model_name
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.pretrained_model_name
         )
         self.vec_type = vec_type
-        self.vf2pos = vf2pos
-        self.vf2neg = vf2neg
         self._preprocess()
+        self._make_f_dict()
 
     def __len__(self):
         return self.data_num
@@ -95,6 +94,16 @@ class SiameseDataset(Dataset):
             )
             self.ex2inputs[df_dict["ex_idx"]] = inputs
 
+    def _make_f_dict(self):
+        self.f2pos, self.f2neg = {}, {}
+        for frame in sorted(set(self.df["frame"])):
+            self.f2pos[frame] = list(
+                self.df[self.df["frame"] == frame]["ex_idx"]
+            )
+            self.f2neg[frame] = list(
+                self.df[self.df["frame"] != frame]["ex_idx"]
+            )
+
     def make_dataset(self):
         self.out_inputs = []
         for df_dict in self.df.to_dict("records"):
@@ -102,11 +111,11 @@ class SiameseDataset(Dataset):
             if true == 1:
                 candidates = [
                     e
-                    for e in self.vf2pos[df_dict["verb_frame"]]
+                    for e in self.f2pos[df_dict["frame"]]
                     if e != df_dict["ex_idx"]
                 ]
             else:
-                candidates = self.vf2neg[df_dict["verb_frame"]]
+                candidates = self.f2neg[df_dict["frame"]]
 
             ex_idx = df_dict["ex_idx"]
             if len(candidates) != 0:
@@ -126,16 +135,15 @@ class SiameseDataset(Dataset):
 
 
 class TripletDataset(Dataset):
-    def __init__(self, df, pretrained_model_name, vec_type, vf2pos, vf2neg):
+    def __init__(self, df, pretrained_model_name, vec_type):
         self.df = df
         self.pretrained_model_name = pretrained_model_name
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.pretrained_model_name
         )
         self.vec_type = vec_type
-        self.vf2pos = vf2pos
-        self.vf2neg = vf2neg
         self._preprocess()
+        self._make_f_dict()
 
     def __len__(self):
         return self.data_num
@@ -161,21 +169,32 @@ class TripletDataset(Dataset):
             )
             self.ex2inputs[df_dict["ex_idx"]] = inputs
 
+    def _make_f_dict(self):
+        self.f2pos, self.f2neg = {}, {}
+        for frame in sorted(set(self.df["frame"])):
+            self.f2pos[frame] = list(
+                self.df[self.df["frame"] == frame]["ex_idx"]
+            )
+            self.f2neg[frame] = list(
+                self.df[self.df["frame"] != frame]["ex_idx"]
+            )
+
     def make_dataset(self):
         self.out_inputs = []
         for df_dict in self.df.to_dict("records"):
             candidates_pos = [
                 e
-                for e in self.vf2pos[df_dict["verb_frame"]]
+                for e in self.f2pos[df_dict["frame"]]
                 if e != df_dict["ex_idx"]
             ]
-            candidates_neg = self.vf2neg[df_dict["verb_frame"]]
+            candidates_neg = self.f2neg[df_dict["frame"]]
 
             ex_idx = df_dict["ex_idx"]
             if (len(candidates_pos) != 0) and (len(candidates_neg) != 0):
                 ex_pos = random.choice(candidates_pos)
                 ex_neg = random.choice(candidates_neg)
             else:
+                print("***")
                 continue
 
             out_dict = {

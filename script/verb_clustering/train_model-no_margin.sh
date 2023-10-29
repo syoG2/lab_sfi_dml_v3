@@ -9,8 +9,8 @@ pretrained_model_name=bert-base-uncased
 
 vec_types=(word mask)
 
-model_name=softmax_classification
-# model_name=adacos_classification
+# model_name=softmax_classification
+model_name=adacos_classification
 
 run_number=00
 

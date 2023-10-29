@@ -1,19 +1,15 @@
 import argparse
-import random
 from pathlib import Path
 from socket import gethostname
 from time import time
 
-import mlflow
 import pandas as pd
 import torch
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoTokenizer
 
 from sfidml.f_induc.collate_fn import (
-    base_collate_fn,
     classification_collate_fn,
     siamese_collate_fn,
     triplet_collate_fn,
@@ -84,7 +80,7 @@ def main(args):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     df_train = pd.DataFrame(read_jsonl(args.input_train_file))
-    df_dev = pd.DataFrame(read_jsonl(args.input_dev_file))
+    # df_dev = pd.DataFrame(read_jsonl(args.input_dev_file))
 
     if "vanilla" in args.model_name:
         model = BaseNet(
@@ -94,14 +90,10 @@ def main(args):
         )
     else:
         if "siamese_distance" in args.model_name:
-            vf2pos = read_json(args.input_train_vf2pos_file)
-            vf2neg = read_json(args.input_train_vf2neg_file)
             ds_train = SiameseDataset(
                 df_train,
                 args.pretrained_model_name,
                 args.vec_type,
-                vf2pos,
-                vf2neg,
             )
             model = SiameseNet(
                 args.pretrained_model_name,
@@ -111,14 +103,10 @@ def main(args):
             )
             collate_fn = siamese_collate_fn
         elif "triplet_distance" in args.model_name:
-            vf2pos = read_json(args.input_train_vf2pos_file)
-            vf2neg = read_json(args.input_train_vf2neg_file)
             ds_train = TripletDataset(
                 df_train,
                 args.pretrained_model_name,
                 args.vec_type,
-                vf2pos,
-                vf2neg,
             )
             model = TripletNet(
                 args.pretrained_model_name,
@@ -202,8 +190,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_train_file", type=Path, required=True)
     parser.add_argument("--input_dev_file", type=Path, required=True)
-    parser.add_argument("--input_train_vf2pos_file", type=Path, required=False)
-    parser.add_argument("--input_train_vf2neg_file", type=Path, required=False)
     parser.add_argument("--output_dir", type=Path, required=True)
 
     parser.add_argument(
