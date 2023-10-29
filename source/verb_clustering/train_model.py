@@ -19,7 +19,7 @@ from sfidml.f_induc.dataset import (
     SiameseDataset,
     TripletDataset,
 )
-from sfidml.f_induc.embedding import get_embedding
+from sfidml.f_induc.embedding import BaseEmbedding
 from sfidml.f_induc.model import (
     BaseNet,
     ClassificationNet,
@@ -32,10 +32,7 @@ from sfidml.utils.data_utils import read_jsonl, write_json, write_jsonl
 from sfidml.utils.model_utils import fix_seed
 
 
-def run_ranking(df, pretrained_model_name, vec_type, model, batch_size):
-    df_vec, vec_array = get_embedding(
-        df, pretrained_model_name, vec_type, model, batch_size
-    )
+def run_ranking(df_vec, vec_array):
     ranking_scores = {}
     for ranking_method in ["all_all"]:
         sr = SimilarityRanking(ranking_method)
@@ -141,13 +138,14 @@ def main(args):
 
             model.to(args.device).train()
             metrics_train, model, optimizer = step(dl_train, model, optimizer)
-            # ranking_scores_dev = run_ranking(
-            #     df_dev,
+            # embedding = BaseEmbedding(
+            #     model.pretrained_model,
             #     args.pretrained_model_name,
             #     args.vec_type,
-            #     model.pretrained_model,
             #     args.batch_size,
             # )
+            # df_vec, vec_array = embedding.get_embedding(df_dev)
+            # ranking_scores_dev = run_ranking(df_vec, vec_array)
 
             log_dict = {"epoch": epoch, "time": time()}
             log_dict.update({f"train-{k}": v for k, v in metrics_train.items()})
@@ -159,13 +157,14 @@ def main(args):
                 optimizer.state_dict(), args.output_dir / "optimizer.pth"
             )
     else:
-        # ranking_scores_dev = run_ranking(
-        #     df_dev,
-        #     args.pretrained_model_name,
-        #     args.vec_type,
-        #     model.pretrained_model,
-        #     args.batch_size,
-        # )
+        # embedding = BaseEmbedding(
+        #         model.pretrained_model,
+        #         args.pretrained_model_name,
+        #         args.vec_type,
+        #         args.batch_size,
+        #     )
+        # df_vec, vec_array = embedding.get_embedding(df_dev)
+        # ranking_scores_dev = run_ranking(df_vec, vec_array)
         # log_dict = {"dev-" + k: v for k, v in ranking_scores_dev.items()}
         log_dict = {"time": time()}
         log_list.append(log_dict)

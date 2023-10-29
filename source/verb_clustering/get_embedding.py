@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from sfidml.f_induc.embedding import get_embedding
+from sfidml.f_induc.embedding import BaseEmbedding
 from sfidml.f_induc.model import BaseNet
 from sfidml.utils.data_utils import read_jsonl, write_jsonl
 
@@ -24,13 +24,13 @@ def main(args):
 
     split = args.input_file.name.split(".jsonl")[0].split("_")[1]
 
-    df_vec, vec_array = get_embedding(
-        df,
+    embedding = BaseEmbedding(
+        model,
         params["pretrained_model_name"],
         params["vec_type"],
-        model,
         args.batch_size,
     )
+    df_vec, vec_array = embedding.get_embedding(df)
     write_jsonl(
         df_vec.to_dict("records"), args.output_dir / f"exemplars_{split}.jsonl"
     )

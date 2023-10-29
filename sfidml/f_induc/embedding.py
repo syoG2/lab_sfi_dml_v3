@@ -9,24 +9,34 @@ from sfidml.f_induc.dataset import BaseDataset
 from sfidml.utils.data_utils import read_jsonl
 
 
-def get_embedding(df, pretrained_model_name, vec_type, model, batch_size):
-    ds = BaseDataset(df, pretrained_model_name, vec_type)
-    dl = DataLoader(
-        ds, batch_size=batch_size, collate_fn=base_collate_fn, shuffle=False
-    )
+class BaseEmbedding:
+    def __init__(self, model, pretrained_model_name, vec_type, batch_size):
+        self.model = model
+        self.pretrained_model_name = pretrained_model_name
+        self.vec_type = vec_type
+        self.batch_size = batch_size
 
-    vec_list = []
-    for batch in tqdm(dl):
-        with torch.no_grad():
-            vec_list += list(model(batch).cpu().detach().numpy())
+    def get_embedding(self, df):
+        ds = BaseDataset(df, self.pretrained_model_name, self.vec_type)
+        dl = DataLoader(
+            ds,
+            batch_size=self.batch_size,
+            collate_fn=base_collate_fn,
+            shuffle=False,
+        )
 
-    df_vec = (
-        df.reset_index(drop=True)
-        .reset_index()
-        .rename(columns={"index": "vec_id"})
-    )
-    vec_array = np.array(vec_list)
-    return df_vec, vec_array
+        vec_list = []
+        for batch in tqdm(dl):
+            with torch.no_grad():
+                vec_list += list(self.model(batch).cpu().detach().numpy())
+
+        df_vec = (
+            df.reset_index(drop=True)
+            .reset_index()
+            .rename(columns={"index": "vec_id"})
+        )
+        vec_array = np.array(vec_list)
+        return df_vec, vec_array
 
 
 def read_embedding(vec_dir, split, alpha, runs):

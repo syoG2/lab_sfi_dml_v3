@@ -9,8 +9,6 @@ from scipy.spatial.distance import pdist
 from scipy.special import comb
 from sklearn.metrics import confusion_matrix
 
-from dump.adjusted_xmeans import adjusted_xmeans
-
 
 class TwostepClustering:
     def __init__(self, clustering_method1, clustering_method2):
