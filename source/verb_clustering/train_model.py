@@ -9,39 +9,16 @@ from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from sfidml.f_induc.collate_fn import (
-    classification_collate_fn,
-    siamese_collate_fn,
-    triplet_collate_fn,
-)
-from sfidml.f_induc.dataset import (
-    ClassificationDataset,
-    SiameseDataset,
-    TripletDataset,
-)
+from sfidml.f_induc.collate_fn import (classification_collate_fn,
+                                       siamese_collate_fn, triplet_collate_fn)
+from sfidml.f_induc.dataset import (ClassificationDataset, SiameseDataset,
+                                    TripletDataset)
 from sfidml.f_induc.embedding import BaseEmbedding
-from sfidml.f_induc.model import (
-    BaseNet,
-    ClassificationNet,
-    SiameseNet,
-    TripletNet,
-)
-from sfidml.f_induc.ranking import SimilarityRanking
-from sfidml.modules.score_ranking import calc_ranking_scores
+from sfidml.f_induc.model import (BaseNet, ClassificationNet, SiameseNet,
+                                  TripletNet)
+from sfidml.f_induc.ranking import run_ranking
 from sfidml.utils.data_utils import read_jsonl, write_json, write_jsonl
 from sfidml.utils.model_utils import fix_seed
-
-
-def run_ranking(df_vec, vec_array):
-    ranking_scores = {}
-    for ranking_method in ["all_all"]:
-        sr = SimilarityRanking(ranking_method)
-        ranking_list = sr.ranking(df_vec, vec_array)
-        scores = calc_ranking_scores(ranking_list)
-        ranking_scores.update(
-            {f"{k}-{ranking_method}": v for k, v in scores.items()}
-        )
-    return ranking_scores
 
 
 def step(dl, model, optimizer=None):

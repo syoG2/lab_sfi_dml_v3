@@ -1,12 +1,25 @@
 import faiss
 
+from sfidml.modules.score_ranking import (
+    aggregate_ranking_scores,
+    calculate_ranking_scores,
+)
+
+
+def run_ranking(df, vec_array, ranking_method="all-all"):
+    sr = SimilarityRanking(ranking_method)
+    rankings = sr.ranking(df, vec_array)
+    scores = calculate_ranking_scores(rankings)
+    metrics = aggregate_ranking_scores(scores)
+    return metrics
+
 
 class SimilarityRanking:
     def __init__(self, ranking_method):
         self.ranking_method = ranking_method
 
     def ranking(self, df, vec_array):
-        if self.ranking_method == "all_all":
+        if self.ranking_method == "all-all":
             ranking_list = self._ranking_all(df, vec_array)
         else:
             ranking_list = self._ranking_select(df, vec_array)
@@ -46,16 +59,15 @@ class SimilarityRanking:
             )
         return ranking_list
 
-    def _ranking_select(self, df, vec_array, ranking):
+    def _ranking_select(self, df, vec_array):
         ranking_list = []
-        for vf in sorted(set(df["verb_frame"])):
-            verb = vf.split("_")[0]
-            frame = "_".join(vf.split("_")[1:])
+        for verb_frame in sorted(set(df["verb_frame"])):
+            verb, frame = verb_frame.split(":")
 
-            df_query = df[df["verb_frame"] == vf].reset_index(drop=True)
+            df_query = df[df["verb_frame"] == verb_frame].reset_index(drop=True)
             vec_query = vec_array[df_query["vec_id"]]
 
-            pos, neg = ranking.split("_")
+            pos, neg = self.ranking_method.split("-")
             if pos == "same":
                 pos_pattern = (df["frame"] == frame) & (df["verb"] == verb)
             elif pos == "diff":
@@ -77,11 +89,10 @@ class SimilarityRanking:
             index.add(vec_value)
             searched_indexes = index.search(vec_query, k=n)[1]
 
+            ex_idx_list = df_query["ex_idx"].to_list()
             searched_frames = searched_indexes[df_query.index]
             df_frame = df_value[df_value["frame"] == frame]
-            for ex_idx, searched_frame in zip(
-                df_query["ex_idx"].to_list(), searched_frames
-            ):
+            for ex_idx, searched_frame in zip(ex_idx_list, searched_frames):
                 true_idx = [
                     e for e in df_frame["ex_idx"].to_list() if e != ex_idx
                 ]
