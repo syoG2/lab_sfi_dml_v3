@@ -39,21 +39,25 @@ class BaseEmbedding:
         return df_vec, vec_array
 
 
-def read_embedding(vec_dir, split, alpha, runs):
+def read_embedding(vec_dir, split, vec_type2run_number, alpha):
     if alpha == 0:
-        vec_file1 = vec_dir / "word" / runs[0] / f"vec_{split}.npz"
-        vec_array = np.load(vec_file1, allow_pickle=True)["vec"]
-        ex_file = vec_dir / "word" / runs[0] / f"exemplars_{split}.jsonl"
+        dir1 = vec_dir / "word" / vec_type2run_number["word"]
+        vec_array = np.load(dir1 / f"vec_{split}.npz", allow_pickle=True)["vec"]
+        ex_file = dir1 / f"exemplars_{split}.jsonl"
     elif alpha == 1:
-        vec_file1 = vec_dir / "mask" / runs[1] / f"vec_{split}.npz"
-        vec_array = np.load(vec_file1, allow_pickle=True)["vec"]
-        ex_file = vec_dir / "mask" / runs[1] / f"exemplars_{split}.jsonl"
+        dir1 = vec_dir / "mask" / vec_type2run_number["mask"]
+        vec_array = np.load(dir1 / f"vec_{split}.npz", allow_pickle=True)["vec"]
+        ex_file = dir1 / f"exemplars_{split}.jsonl"
     else:
-        vec_file1 = vec_dir / "word" / runs[0] / f"vec_{split}.npz"
-        vec_file2 = vec_dir / "mask" / runs[1] / f"vec_{split}.npz"
-        word_array = np.load(vec_file1, allow_pickle=True)["vec"]
-        mask_array = np.load(vec_file2, allow_pickle=True)["vec"]
+        dir1 = vec_dir / "word" / vec_type2run_number["word"]
+        dir2 = vec_dir / "mask" / vec_type2run_number["mask"]
+        word_array = np.load(dir1 / f"vec_{split}.npz", allow_pickle=True)[
+            "vec"
+        ]
+        mask_array = np.load(dir2 / f"vec_{split}.npz", allow_pickle=True)[
+            "vec"
+        ]
         vec_array = word_array * (1 - alpha) + mask_array * alpha
-        ex_file = vec_dir / "word" / runs[0] / f"exemplars_{split}.jsonl"
+        ex_file = dir1 / f"exemplars_{split}.jsonl"
     df_vec = pd.DataFrame(read_jsonl(ex_file))
     return df_vec, vec_array

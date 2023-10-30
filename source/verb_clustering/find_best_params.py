@@ -16,12 +16,14 @@ def main(args):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     if args.vec_type == "word":
-        alpha_list = [0]
+        vec_types = ["word"]
+        alphas = [0]
     elif args.vec_type == "mask":
-        alpha_list = [1]
+        vec_types = ["mask"]
+        alphas = [1]
     elif args.vec_type == "wm":
-        alpha_list = [0, 1]
-        alpha_list2 = [i / 10 for i in range(11)]
+        vec_types = ["word", "mask"]
+        alphas = [i / 10 for i in range(11)]
 
     if args.clustering_name == "onestep":
         clustering = OnestepClustering(args.clustering_method)
@@ -30,13 +32,14 @@ def main(args):
             args.clustering_method1, args.clustering_method2
         )
 
-    best_runs = {}
-    for alpha in tqdm(alpha_list):
+    best_vec_type2run_number = {}
+    for vec_type in tqdm(vec_types):
         best_bcf = 0
         for run_number in tqdm(args.run_numbers):
-            runs = {alpha: run_number}
+            vec_type2run_number = {vec_type: run_number}
+            alpha = 0 if vec_type == "word" else 1
             df_vec, vec_array = read_embedding(
-                args.input_dir, "dev", alpha, runs
+                args.input_dir, "dev", vec_type2run_number, alpha
             )
             params = clustering.make_params(df_vec, vec_array)
             if args.clustering_name == "onestep":
@@ -53,13 +56,13 @@ def main(args):
             bcf = calculate_bcubed(true, pred)[2]
             if best_bcf < bcf:
                 best_bcf = bcf
-                best_runs[alpha] = run_number
+                best_vec_type2run_number[vec_type] = run_number
 
     if args.vec_type == "wm":
         best_bcf = 0
-        for alpha in tqdm(alpha_list2):
+        for alpha in tqdm(alphas):
             df_vec, vec_array = read_embedding(
-                args.input_dir, "dev", alpha, best_runs
+                args.input_dir, "dev", best_vec_type2run_number, alpha
             )
             params = clustering.make_params(df_vec, vec_array)
             if args.clustering_name == "onestep":
@@ -80,7 +83,10 @@ def main(args):
     else:
         best_alpha = alpha
 
-    best_params = {"alpha": best_alpha, "runs": best_runs}
+    best_params = {
+        "alpha": best_alpha,
+        "vec_type2run_number": best_vec_type2run_number,
+    }
     if args.clustering_name == "onestep":
         best_params["clustering_method"] = args.clustering_method
     elif args.clustering_name == "twostep":

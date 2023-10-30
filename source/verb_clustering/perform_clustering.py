@@ -17,8 +17,16 @@ def main(args):
         for key, value in best_params.items():
             setattr(args, key, value)
     else:
-        run_number_word, run_number_mask = args.run_number.split("-")
-        args.runs = {0: run_number_word, 1: run_number_mask}
+        if args.alpha == 0:
+            args.vec_type2run_number = {"word": args.run_number}
+        elif args.alpha == 1:
+            args.vec_type2run_number = {"mask": args.run_number}
+        else:
+            run_number_word, run_number_mask = args.run_number.split("-")
+            args.vec_type2run_number = {
+                "word": run_number_word,
+                "mask": run_number_mask,
+            }
 
     if args.clustering_name == "onestep":
         clustering = OnestepClustering(args.clustering_method)
@@ -28,7 +36,7 @@ def main(args):
         )
 
     df_vec, vec_array = read_embedding(
-        args.input_dir, "dev", args.alpha, args.runs
+        args.input_dir, "dev", args.vec_type2run_number, args.alpha
     )
     params = clustering.make_params(df_vec, vec_array)
 
@@ -38,7 +46,7 @@ def main(args):
         df_clu_dev = clustering.step(df_vec, vec_array, vec_array, params)
 
     df_vec, vec_array = read_embedding(
-        args.input_dir, "test", args.alpha, args.runs
+        args.input_dir, "test", args.vec_type2run_number, args.alpha
     )
     if args.clustering_name == "onestep":
         df_clu_test = clustering.step(df_vec, vec_array, params)
@@ -47,11 +55,11 @@ def main(args):
 
     write_jsonl(
         df_clu_dev.to_dict("records"),
-        (args.output_dir / args.input_dev_file.name),
+        (args.output_dir / "exemplars_dev.jsonl"),
     )
     write_jsonl(
         df_clu_test.to_dict("records"),
-        (args.output_dir / args.input_test_file.name),
+        (args.output_dir / "exemplars_test.jsonl"),
     )
     write_json(vars(args), args.output_dir / "params.json")
 
@@ -61,16 +69,17 @@ if __name__ == "__main__":
     parser.add_argument("--input_dir", type=Path, required=True)
     parser.add_argument("--output_dir", type=Path, required=True)
 
+    parser.add_argument(
+        "--clustering_name",
+        type=str,
+        choices=["onestep", "twostep"],
+        required=True,
+    )
+
     parser.add_argument("--input_params_file", type=Path, required=False)
 
-    parser.add_argument("--alpha", type=float, default=0.5, required=False)
-    parser.add_argument(
-        "--run_number", type=str, default="00-00", required=False
-    )
-
-    parser.add_argument(
-        "--clustering_name", type=str, choices=["onestep", "twostep"]
-    )
+    parser.add_argument("--alpha", type=float, required=False)
+    parser.add_argument("--run_number", type=str, required=False)
 
     parser.add_argument(
         "--clustering_method",
