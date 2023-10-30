@@ -25,7 +25,7 @@ for setting in ${settings[@]}; do
             python ${source_dir}/perform_clustering.py \
                 --input_dir ${data_dir}/embedding/${d1} \
                 --output_dir ${data_dir}/clustering/${d1}/${d2} \
-                --input_params_file ${data_dir}/find_best_params/${d1}/${d2}/best_params.json \
+                --input_params_file ${data_dir}/best_params_clustering/${d1}/${d2}/best_params.json \
                 --clustering_name ${clustering_name}
         done
     done

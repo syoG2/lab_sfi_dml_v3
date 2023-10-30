@@ -24,9 +24,9 @@ for setting in ${settings[@]}; do
         for vec_type in ${vec_types[@]}; do
             d1=${setting}/${pretrained_model_name}/${model_name}
             d2=${vec_type}/${clustering_name}/${clustering_method1}/${clustering_method2}
-            python ${source_dir}/find_best_params.py \
+            python ${source_dir}/find_best_params_clustering.py \
                 --input_dir ${data_dir}/embedding/${d1} \
-                --output_dir ${data_dir}/find_best_params/${d1}/${d2} \
+                --output_dir ${data_dir}/best_params_clustering/${d1}/${d2} \
                 --vec_type ${vec_type} \
                 --run_numbers ${run_numbers[@]} \
                 --clustering_name ${clustering_name} \
