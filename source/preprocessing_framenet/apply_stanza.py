@@ -1,55 +1,49 @@
+import argparse
 import re
-from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Any, Dict, List, Union
 
+import pandas as pd
 import stanza
-from fadml.utils.data_utils import read_json, write_json
-from stanza.models.common.doc import Document
-from stanza.pipeline.core import Pipeline
-from tokenizations import get_alignments
+import tokenizations
 from tqdm import tqdm
 
+from sfidml.utils.data_utils import read_jsonl, write_jsonl
 
-def make_alignment(
-    text: Union[str, List[str]], new_text: Union[str, List[str]]
-) -> Dict[int, int]:
-    alignment = {}
-    for idx, new_idx in enumerate(get_alignments(text, new_text)[0] + [[]]):
-        if len(new_idx) != 0:
-            alignment[idx] = new_idx[0]
+
+def make_alignments(text, new_text):
+    alignment_dict = {}
+    alignments = tokenizations.get_alignments(text, new_text)[0]
+    for i, new in enumerate(alignments + [[]]):
+        if len(new) != 0:
+            alignment_dict[i] = new[0]
         else:
-            if idx - 1 in alignment:
-                alignment[idx] = alignment[idx - 1]
+            if i - 1 in alignment_dict:
+                alignment_dict[i] = alignment_dict[i - 1]
             else:
-                alignment[idx] = 0
-    return alignment
+                alignment_dict[i] = 0
+    return alignment_dict
 
 
-def make_word_list(doc: Document) -> List[Dict[str, Any]]:
+def make_word_list(doc):
     word_list, count, word_count = [], 0, 0
-    for sentence_id, sentence in enumerate(doc.sentences):
+    for sent_id, sent in enumerate(doc.sentences):
         child = {}
-        for word in sentence.words:
+        for word in sent.words:
             if word.head not in child:
                 child[word.head] = [word.id]
             else:
                 child[word.head].append(word.id)
 
-        for word in sentence.words:
+        for word in sent.words:
             word_dict = word.to_dict()
             word_dict.update(
-                {
-                    "id": count,
-                    "sent_id": sentence_id,
-                    "word_id": int(word.id) - 1,
-                }
+                {"id": count, "sent_id": sent_id, "word_id": int(word.id) - 1}
             )
             if word.head != 0:
                 word_dict.update(
                     {
                         "head": word.head - 1 + word_count,
-                        "head_text": sentence.words[word.head - 1].text,
+                        "head_text": sent.words[word.head - 1].text,
                     }
                 )
             else:
@@ -66,99 +60,135 @@ def make_word_list(doc: Document) -> List[Dict[str, Any]]:
                 word_dict.update({"children": []})
             word_list.append(word_dict)
             count += 1
-        word_count += len(sentence.words)
+        word_count += len(sent.words)
     return word_list
 
 
-def find_head(word_list, span_start, span_end):
-    cache = []
-    children = [d["id"] for d in word_list if d["head"] == -1]
-    for child_id in children:
-        if child_id in cache:
-            continue
-        if span_start <= child_id <= span_end:
-            return child_id
-        else:
-            children += word_list[child_id]["children"]
-        cache.append(child_id)
+def find_widx_head(word_list, target_widx, fe_widx):
+    target_widx_head, fe_widx_head = [], []
+    for word_dict in word_list:
+        if word_dict["deprel"] == "root":
+            if target_widx_head == []:
+                target_widx_head = find_target_head(
+                    word_dict, word_list, target_widx, []
+                )
+            fe_widx_head += find_fe_head(word_dict, word_list, fe_widx, [])
+    return target_widx_head[0], sorted(fe_widx_head)
 
 
-def get_verb(lu_name: str, nlp: Pipeline) -> str:
+def find_target_head(node, word_list, target_widx, new_target_widx):
+    b, e = target_widx
+    if new_target_widx == []:
+        if node["deprel"] == "root":
+            if b <= int(node["id"]) <= e:
+                new_target_widx.append([b, e, int(node["id"])])
+
+        for child_id in [word_list[c]["id"] for c in node["children"]]:
+            if b <= int(child_id) <= e:
+                new_target_widx.append([b, e, int(child_id)])
+
+        for child in [word_list[c] for c in node["children"]]:
+            find_target_head(child, word_list, target_widx, new_target_widx)
+    return new_target_widx
+
+
+def find_fe_head(node, word_list, fe_widx, new_fe_widx):
+    old_fe_widx = []
+    if node["n_lefts"] + node["n_rights"] > 0:
+        for b, e, fe in fe_widx:
+            flag = 0
+            for child in [word_list[c]["id"] for c in node["children"]]:
+                if b <= int(child) <= e:
+                    new_fe_widx.append([b, e, fe, int(child)])
+                    flag = 1
+                    break
+            if flag == 0:
+                old_fe_widx.append([b, e, fe])
+
+    if len(old_fe_widx) > 0:
+        for child in [word_list[c] for c in node["children"]]:
+            find_fe_head(child, word_list, old_fe_widx, new_fe_widx)
+    return new_fe_widx
+
+
+def make_verb(lu_name, nlp):
     verb = re.sub("[\[|\(].+[\)|\]]", "", lu_name)[:-2].strip()
     if not re.fullmatch("[a-z][a-z-]*", verb):
         doc = nlp(verb)
         head = [
-            w.id - 1
-            for s in doc.sentences
-            for w in s.words
-            if w.deprel == "root"
+            word.id - 1
+            for sentences in doc.sentences
+            for word in sentences.words
+            if word.deprel == "root"
         ][0]
-        verb = [w.text for s in doc.sentences for w in s.words][head]
+        verb = [
+            word.text for sentences in doc.sentences for word in sentences.words
+        ][head]
     return verb
 
 
-def main(args: Namespace) -> None:
+def main(args):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    exemplars = read_json(args.input_exemplars_file)
-    nlp = stanza.Pipeline(
-        "en",
-        processors="tokenize,mwt,pos,lemma,depparse",
-        use_gpu=True,
-        pos_batch_size=3000,
+    df = pd.DataFrame(read_jsonl(args.input_file))
+    df = df[df["lu_name"].apply(lambda x: x.split(".")[-1]) == "v"].reset_index(
+        drop=True
     )
+    df = df.reset_index(drop=True)
 
-    exemplars, word_lists = [], []
-    for exemplar in tqdm(exemplars):
-        if not exemplar["lu_name"].endswith(".v"):
-            continue
+    nlp = stanza.Pipeline("en")
 
-        text_norm = " ".join(
-            (re.sub("\s", " ", exemplar["text"]).rstrip() + " ").split() + [""]
+    ex_list, ex_list2 = [], []
+    for df_dict in tqdm(df.to_dict("records")):
+        text, target, fe, lu_name = (
+            df_dict["text"],
+            df_dict["target"][0],
+            df_dict["fe"][0],
+            df_dict["lu_name"],
+        )
+
+        text_norm = (
+            " ".join((re.sub("\s", " ", text).rstrip() + " ").split()) + " "
         )
         doc = nlp(text_norm)
-        text_widx = " ".join(
-            [w.text for s in doc.sentences for w in s.words] + [""]
+        text_widx = (
+            " ".join([w.text for s in doc.sentences for w in s.words]) + " "
         )
 
-        a1 = make_alignment(exemplar["text"], text_norm)
-        a2 = make_alignment(text_norm, text_widx)
-        a3 = make_alignment(list(text_widx), text_widx.split())
-        target_widx = [a3[a2[a1[t]]] for t in exemplar["target"][0]]
-        fe_widx = [
-            [a3[a2[a1[b]]], a3[a2[a1[e]]], f] for b, e, f in exemplar["fe"][0]
-        ]
+        a1 = make_alignments(text, text_norm)
+        a2 = make_alignments(text_norm, text_widx)
+        a3 = make_alignments(list(text_widx), text_widx.split())
+
+        target_widx = [a3[a2[a1[t]]] for t in target]
+        fe_widx_list = [[a3[a2[a1[b]]], a3[a2[a1[e]]], f] for b, e, f in fe]
 
         word_list = make_word_list(doc)
-        target_widx_head = find_head(word_list, target_widx[0], target_widx[1])
-        target_widx_with_head = target_widx + [target_widx_head]
-        fe_widx_with_head = []
-        for b, e, f in fe_widx:
-            h = find_head(word_list, b, e)
-            fe_widx_with_head.append([b, e, h, f])
+        target_widx_head, _ = find_widx_head(
+            word_list, target_widx, fe_widx_list
+        )
 
-        verb = get_verb(exemplar["lu_name"], nlp)
+        verb = make_verb(lu_name, nlp)
 
-        exemplar.update(
+        df_dict.update(
             {
                 "text_widx": text_widx,
-                "target_widx": target_widx_with_head,
-                "fe_widx": fe_widx_with_head,
+                "target_widx": target_widx_head,
                 "verb": verb,
             }
         )
-        exemplars.append(exemplar)
-        word_lists.append(
-            {"ex_idx": exemplar["ex_idx"], "word_list": word_list}
-        )
+        ex_list.append(df_dict)
+        ex_list2.append({"ex_idx": df_dict["ex_idx"], "word_list": word_list})
 
-    write_json(exemplars, args.output_dir / "exemplars.jsonl")
-    write_json(word_lists, args.output_dir / "word_list.jsonl")
+    df_ex = pd.DataFrame(ex_list)
+    write_jsonl(df_ex.to_dict("records"), args.output_dir / "exemplars.jsonl")
+
+    df_ex2 = pd.DataFrame(ex_list2)
+    write_jsonl(df_ex2.to_dict("records"), args.output_dir / "word_list.jsonl")
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument("--input_exemplars_file", type=Path, required=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_file", type=Path, required=True)
     parser.add_argument("--output_dir", type=Path, required=True)
     args = parser.parse_args()
     print(args)
