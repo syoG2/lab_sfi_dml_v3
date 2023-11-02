@@ -20,12 +20,13 @@ for setting in ${settings[@]}; do
     for model_name in ${model_names[@]}; do
         for vec_type in ${vec_types[@]}; do
             d1=${setting}/${pretrained_model_name}/${model_name}
-            d2=${vec_type}/${clustering_name}/${clustering_method}
+            d2=${vec_type}/${clustering_name}-${clustering_method}
             python ${source_dir}/perform_clustering.py \
                 --input_dir ${data_dir}/embedding/${d1} \
                 --output_dir ${data_dir}/clustering/${d1}/${d2} \
                 --input_params_file ${data_dir}/best_params_clustering/${d1}/${d2}/best_params.json \
-                --clustering_name ${clustering_name}
+                --clustering_name ${clustering_name} \
+                --clustering_method ${clustering_method}
         done
     done
 done

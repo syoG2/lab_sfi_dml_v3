@@ -8,9 +8,9 @@ settings=(all_3_2)
 
 pretrained_model_name=bert-base-uncased
 model_names=(siamese_distance triplet_distance arcface_classification)
-# vec_types=(word mask wm)
+vec_types=(word mask wm)
 # vec_types=(word mask)
-vec_types=(wm)
+# vec_types=(wm)
 
 run_numbers=(00 01 02 03)
 
@@ -21,7 +21,7 @@ for setting in ${settings[@]}; do
     for model_name in ${model_names[@]}; do
         for vec_type in ${vec_types[@]}; do
             d1=${setting}/${pretrained_model_name}/${model_name}
-            d2=${vec_type}/${clustering_name}/${clustering_method}
+            d2=${vec_type}/${clustering_name}-${clustering_method}
             python ${source_dir}/find_best_params_clustering.py \
                 --input_dir ${data_dir}/embedding/${d1} \
                 --output_dir ${data_dir}/best_params_clustering/${d1}/${d2} \

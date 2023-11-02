@@ -10,11 +10,9 @@ pretrained_model_name=bert-base-uncased
 
 model_names=(vanilla arcface_classification softmax_classification siamese_distance adacos_classification triplet_distance)
 
-vec_type=onestep-average
+vec_type=wm
 clustering_name=onestep
 clustering_method=average
-
-vec_type2=wm
 
 ranking_methods=(all-all same-same diff-diff)
 
@@ -25,8 +23,8 @@ for setting in ${settings[@]}; do
         for ranking_method in ${ranking_methods[@]}; do
             d1=${setting}
             d2=${pretrained_model_name}/${model_name}
-            d3=${vec_type2}/${clustering_name}/${clustering_method}
-            d4=${vec_type}
+            d3=${vec_type}/${clustering_name}-${clustering_method}
+            d4=${vec_type}-${clustering_name}-${clustering_method}
             python ${source_dir}/evaluate_ranking.py \
                 --input_dir ${data_dir}/embedding/${d1}/${d2} \
                 --input_params_file ${data_dir}/best_params_clustering/${d1}/${d2}/${d3}/best_params.json \
