@@ -64,16 +64,15 @@ def make_word_list(doc):
     return word_list
 
 
-def find_widx_head(word_list, target_widx, fe_widx):
-    target_widx_head, fe_widx_head = [], []
+def find_widx_head(word_list, target_widx):
+    target_widx_head = []
     for word_dict in word_list:
         if word_dict["deprel"] == "root":
             if target_widx_head == []:
                 target_widx_head = find_target_head(
                     word_dict, word_list, target_widx, []
                 )
-            fe_widx_head += find_fe_head(word_dict, word_list, fe_widx, [])
-    return target_widx_head[0], sorted(fe_widx_head)
+    return target_widx_head[0]
 
 
 def find_target_head(node, word_list, target_widx, new_target_widx):
@@ -90,25 +89,6 @@ def find_target_head(node, word_list, target_widx, new_target_widx):
         for child in [word_list[c] for c in node["children"]]:
             find_target_head(child, word_list, target_widx, new_target_widx)
     return new_target_widx
-
-
-def find_fe_head(node, word_list, fe_widx, new_fe_widx):
-    old_fe_widx = []
-    if node["n_lefts"] + node["n_rights"] > 0:
-        for b, e, fe in fe_widx:
-            flag = 0
-            for child in [word_list[c]["id"] for c in node["children"]]:
-                if b <= int(child) <= e:
-                    new_fe_widx.append([b, e, fe, int(child)])
-                    flag = 1
-                    break
-            if flag == 0:
-                old_fe_widx.append([b, e, fe])
-
-    if len(old_fe_widx) > 0:
-        for child in [word_list[c] for c in node["children"]]:
-            find_fe_head(child, word_list, old_fe_widx, new_fe_widx)
-    return new_fe_widx
 
 
 def make_verb(lu_name, nlp):
@@ -140,10 +120,9 @@ def main(args):
 
     ex_list, ex_list2 = [], []
     for df_dict in tqdm(df.to_dict("records")):
-        text, target, fe, lu_name = (
+        text, target, lu_name = (
             df_dict["text"],
             df_dict["target"][0],
-            df_dict["fe"][0],
             df_dict["lu_name"],
         )
 
@@ -160,12 +139,9 @@ def main(args):
         a3 = make_alignments(list(text_widx), text_widx.split())
 
         target_widx = [a3[a2[a1[t]]] for t in target]
-        fe_widx_list = [[a3[a2[a1[b]]], a3[a2[a1[e]]], f] for b, e, f in fe]
 
         word_list = make_word_list(doc)
-        target_widx_head, _ = find_widx_head(
-            word_list, target_widx, fe_widx_list
-        )
+        target_widx_head = find_widx_head(word_list, target_widx)
 
         verb = make_verb(lu_name, nlp)
 
