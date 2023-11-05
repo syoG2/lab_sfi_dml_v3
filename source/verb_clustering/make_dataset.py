@@ -57,7 +57,7 @@ def main(args):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.DataFrame(read_jsonl(args.input_file))
-    df["target_widx"] = df["target_widx"].apply(lambda x: x[2])
+    df["target_widx"] = df["target_widx_head"].apply(lambda x: x[2])
     df["frame"] = df["frame_name"]
     df["verb_frame"] = df["verb"].str.cat(df["frame"], sep=":")
     df = df[

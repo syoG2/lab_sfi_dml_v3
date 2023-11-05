@@ -23,7 +23,7 @@ for model_name in ${model_names[@]}; do
             input_files=()
             for setting in ${settings[@]}; do
                 d1=${setting}
-                input_files+=(${data_dir}/evaluate_clustering/${d1}/${d2}/${d3}/metrics_${split}.json)
+                input_files+=(${data_dir}/evaluate_clustering_ours/${d1}/${d2}/${d3}/metrics_${split}.json)
             done
 
             python ${source_dir}/aggregate_scores.py \

@@ -10,11 +10,12 @@ pretrained_model_name=bert-base-uncased
 model_names=(vanilla softmax_classification adacos_classification siamese_distance triplet_distance arcface_classification)
 
 vec_types=(word mask wm)
-# vec_types=(word mask)
+# vec_types=(word)
+# vec_types=(mask)
 # vec_types=(wm)
 
-clustering_name=onestep
-clustering_method=average
+# clustering_name_method=(onestep-average twostep-xmeans-average)
+clustering_name_method=(twostep-xmeans-average)
 
 splits=(dev test)
 
@@ -23,11 +24,11 @@ for setting in ${settings[@]}; do
         for vec_type in ${vec_types[@]}; do
             for split in ${splits[@]}; do
                 d1=${setting}/${pretrained_model_name}/${model_name}
-                d2=${vec_type}/${clustering_name}-${clustering_method}
+                d2=${vec_type}/${clustering_name_method}
                 python ${source_dir}/evaluate_clustering.py \
                     --input_file ${data_dir}/clustering/${d1}/${d2}/exemplars_${split}.jsonl \
                     --input_params_file ${data_dir}/clustering/${d1}/${d2}/params.json \
-                    --output_dir ${data_dir}/evaluate_clustering/${d1}/${d2} \
+                    --output_dir ${data_dir}/evaluate_clustering_ours/${d1}/${d2} \
                     --split ${split}
             done
         done

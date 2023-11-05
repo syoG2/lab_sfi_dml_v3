@@ -9,13 +9,23 @@ from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from sfidml.f_induc.collate_fn import (classification_collate_fn,
-                                       siamese_collate_fn, triplet_collate_fn)
-from sfidml.f_induc.dataset import (ClassificationDataset, SiameseDataset,
-                                    TripletDataset)
+from sfidml.f_induc.collate_fn import (
+    classification_collate_fn,
+    siamese_collate_fn,
+    triplet_collate_fn,
+)
+from sfidml.f_induc.dataset import (
+    ClassificationDataset,
+    SiameseDataset,
+    TripletDataset,
+)
 from sfidml.f_induc.embedding import BaseEmbedding
-from sfidml.f_induc.model import (BaseNet, ClassificationNet, SiameseNet,
-                                  TripletNet)
+from sfidml.f_induc.model import (
+    BaseNet,
+    ClassificationNet,
+    SiameseNet,
+    TripletNet,
+)
 from sfidml.f_induc.ranking import run_ranking
 from sfidml.utils.data_utils import read_jsonl, write_json, write_jsonl
 from sfidml.utils.model_utils import fix_seed
@@ -25,7 +35,7 @@ def step(dl, model, optimizer=None):
     start = time()
     total_loss, count = 0, 0
     for batch in tqdm(dl):
-        if model.training == "train":
+        if model.training:
             optimizer.zero_grad()
             loss = model.compute_loss(batch)
             loss.backward()

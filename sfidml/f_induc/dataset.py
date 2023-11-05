@@ -10,16 +10,22 @@ def tokenize_text_and_target(tokenizer, text_widx, target_widx, vec_type):
     text_tidx = tokenizer.convert_ids_to_tokens(inputs["input_ids"])
 
     alignments, previous_char_idx_list = [], [1]
-    for char_idx_list in get_alignments(text_widx.split(), text_tidx)[0]:
+    for char_idx_list in get_alignments(text_widx.split(), text_tidx[1:-1])[0]:
         if len(char_idx_list) == 0:
             alignments.append(previous_char_idx_list)
         else:
+            char_idx_list = [c + 1 for c in char_idx_list]
             alignments.append(char_idx_list)
             previous_char_idx_list = char_idx_list
 
-    inputs["target_tidx"] = alignments[target_widx][0]
+    target_tidx = alignments[target_widx][0]
     if vec_type == "mask":
-        inputs["input_ids"][inputs["target_tidx"]] = tokenizer.mask_token_id
+        inputs["input_ids"][target_tidx] = tokenizer.mask_token_id
+        if len(alignments[target_widx]) >= 2:
+            for _ in alignments[target_widx][1:]:
+                for k in inputs.keys():
+                    del inputs[k][target_tidx + 1]
+    inputs["target_tidx"] = target_tidx
     return inputs
 
 

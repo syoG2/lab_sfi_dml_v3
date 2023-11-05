@@ -7,14 +7,14 @@ import torch
 
 from sfidml.f_induc.embedding import BaseEmbedding
 from sfidml.f_induc.model import BaseNet
-from sfidml.utils.data_utils import read_jsonl, write_jsonl
+from sfidml.utils.data_utils import read_json, read_jsonl, write_jsonl
 
 
 def main(args):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.DataFrame(read_jsonl(args.input_file))
-    params = list(read_jsonl(args.input_params_file))[0]
+    params = read_json(args.input_params_file)
 
     model = BaseNet(
         params["pretrained_model_name"], params["normalization"], args.device

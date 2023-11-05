@@ -250,7 +250,7 @@ class ArefyevClustering:
         self.criterion1 = "distance"
         self.criterion2 = "maxclust"
 
-        self.regex = "^(tfidf_)"
+        self.regex = "tfidf_"
 
         self.min_th = 20
         self.max_th = 25
@@ -273,7 +273,9 @@ class ArefyevClustering:
             if len(df_cluster) == 1:
                 df_cluster["frame_cluster_2nd"] = [1]
             else:
-                tfidf_array = df_cluster.filter(regex=self.regex, axis=1).values
+                tfidf_array = df_cluster.filter(
+                    regex=f"^({self.regex})", axis=1
+                ).values
                 z = linkage(
                     pdist(tfidf_array),
                     method=self.method,
@@ -317,4 +319,5 @@ class ArefyevClustering:
     def step(self, df, vec_array, params):
         df["frame_cluster_1st"] = self._clustering_1st(vec_array, params)
         df["frame_cluster"] = self._clustering_2nd(df)
+        df = df.filter(regex=f"^(?!{self.regex})", axis=1)
         return df

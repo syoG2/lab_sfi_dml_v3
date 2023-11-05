@@ -24,16 +24,22 @@ def make_alignments(text, new_text):
     return alignment_dict
 
 
-def make_word_list(doc):
+def make_children_dict(doc):
+    children_dict = {}
+    for sent_id, sent in enumerate(doc.sentences):
+        children_dict[sent_id] = {}
+        for word in sent.words:
+            if word.head not in children_dict[sent_id]:
+                children_dict[sent_id][word.head] = [word.id]
+            else:
+                children_dict[sent_id][word.head].append(word.id)
+    return children_dict
+
+
+def make_word_list(doc, children_dict):
     word_list, count, word_count = [], 0, 0
     for sent_id, sent in enumerate(doc.sentences):
-        child = {}
-        for word in sent.words:
-            if word.head not in child:
-                child[word.head] = [word.id]
-            else:
-                child[word.head].append(word.id)
-
+        c_dict = children_dict[sent_id]
         for word in sent.words:
             word_dict = word.to_dict()
             word_dict.update(
@@ -48,31 +54,48 @@ def make_word_list(doc):
                 )
             else:
                 word_dict.update({"head": -1, "head_text": "[ROOT]"})
-            if word.id in child:
+            if word.id in c_dict:
                 word_dict.update(
                     {
                         "children": [
-                            i - 1 + word_count for i in child[word.id]
+                            i - 1 + word_count for i in c_dict[word.id]
                         ],
+                        "children_text": [
+                            i - 1 + word_count for i in c_dict[word.id]
+                        ],
+                        "n_lefts": len(
+                            [i for i in c_dict[word.id] if i < int(word.id)]
+                        ),
+                        "n_rights": len(
+                            [i for i in c_dict[word.id] if i > int(word.id)]
+                        ),
                     }
                 )
             else:
-                word_dict.update({"children": []})
+                word_dict.update(
+                    {
+                        "children": [],
+                        "children_text": [],
+                        "n_lefts": 0,
+                        "n_rights": 0,
+                    }
+                )
             word_list.append(word_dict)
             count += 1
         word_count += len(sent.words)
     return word_list
 
 
-def find_widx_head(word_list, target_widx):
-    target_widx_head = []
+def find_widx_head(word_list, target_widx, fe_widx):
+    target_widx_head, fe_widx_head = [], []
     for word_dict in word_list:
         if word_dict["deprel"] == "root":
             if target_widx_head == []:
                 target_widx_head = find_target_head(
                     word_dict, word_list, target_widx, []
                 )
-    return target_widx_head[0]
+            fe_widx_head += find_fe_head(word_dict, word_list, fe_widx, [])
+    return target_widx_head[0], sorted(fe_widx_head)
 
 
 def find_target_head(node, word_list, target_widx, new_target_widx):
@@ -89,6 +112,25 @@ def find_target_head(node, word_list, target_widx, new_target_widx):
         for child in [word_list[c] for c in node["children"]]:
             find_target_head(child, word_list, target_widx, new_target_widx)
     return new_target_widx
+
+
+def find_fe_head(node, word_list, fe_widx, new_fe_widx):
+    old_fe_widx = []
+    if node["n_lefts"] + node["n_rights"] > 0:
+        for b, e, fe in fe_widx:
+            flag = 0
+            for child in [word_list[c]["id"] for c in node["children"]]:
+                if b <= int(child) <= e:
+                    new_fe_widx.append([b, e, fe, int(child)])
+                    flag = 1
+                    break
+            if flag == 0:
+                old_fe_widx.append([b, e, fe])
+
+    if len(old_fe_widx) > 0:
+        for child in [word_list[c] for c in node["children"]]:
+            find_fe_head(child, word_list, old_fe_widx, new_fe_widx)
+    return new_fe_widx
 
 
 def make_verb(lu_name, nlp):
@@ -116,13 +158,18 @@ def main(args):
     )
     df = df.reset_index(drop=True)
 
-    nlp = stanza.Pipeline("en")
+    nlp = stanza.Pipeline(
+        "en",
+        processors="tokenize,mwt,pos,lemma,depparse",
+        use_gpu=True,
+    )
 
     ex_list, ex_list2 = [], []
     for df_dict in tqdm(df.to_dict("records")):
-        text, target, lu_name = (
+        text, target, fe, lu_name = (
             df_dict["text"],
             df_dict["target"][0],
+            df_dict["fe"][0],
             df_dict["lu_name"],
         )
 
@@ -139,17 +186,26 @@ def main(args):
         a3 = make_alignments(list(text_widx), text_widx.split())
 
         target_widx = [a3[a2[a1[t]]] for t in target]
+        fe_widx_list = [[a3[a2[a1[b]]], a3[a2[a1[e]]], f] for b, e, f in fe]
 
-        word_list = make_word_list(doc)
-        target_widx_head = find_widx_head(word_list, target_widx)
+        children_dict = make_children_dict(doc)
+        word_list = make_word_list(doc, children_dict)
+        target_widx_head, fe_widx_head = find_widx_head(
+            word_list, target_widx, fe_widx_list
+        )
 
         verb = make_verb(lu_name, nlp)
+        verb_frame = "_".join([verb, df_dict["frame_name"]])
 
         df_dict.update(
             {
                 "text_widx": text_widx,
-                "target_widx": target_widx_head,
+                "target_widx": target_widx,
+                "fe_widx": fe_widx_list,
+                "target_widx_head": target_widx_head,
+                "fe_widx_head": fe_widx_head,
                 "verb": verb,
+                "verb_frame": verb_frame,
             }
         )
         ex_list.append(df_dict)

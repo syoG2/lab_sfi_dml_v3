@@ -4,18 +4,16 @@ source_dir=../../source/verb_clustering
 data_dir=../../data/verb_clustering
 
 # settings=(all_3_0 all_3_1 all_3_2)
-settings=(all_3_2)
+settings=(all_3_1)
 
 pretrained_model_name=bert-base-uncased
 # model_names=(vanilla softmax_classification adacos_classification siamese_distance triplet_distance arcface_classification)
-# model_names=(vanilla softmax_classification)
-# model_names=(adacos_classification siamese_distance)
-model_names=(triplet_distance arcface_classification)
+model_names=(triplet_distance)
 
 # vec_types=(word mask wm)
-# vec_types=(word)
+vec_types=(word)
 # vec_types=(mask)
-vec_types=(wm)
+# vec_types=(wm)
 
 clustering_name=twostep
 clustering_method1=xmeans

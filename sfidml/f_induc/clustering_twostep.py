@@ -45,6 +45,8 @@ class TwostepClustering:
             for idx, clusters in enumerate(xm.get_clusters()):
                 for sent_idx in clusters:
                     cluster_array[sent_idx] = idx + 1
+        elif self.clustering_method1 == "1cpv":
+            cluster_array = np.array([1] * len(vec_array))
         return cluster_array
 
     def _make_vec_2nd(self, df, vec_array, count):
@@ -105,18 +107,15 @@ class TwostepClustering:
             for verb in sorted(set(df["verb"])):
                 df_verb = df[df["verb"] == verb]
                 verb_vec_array = vec_array[df_verb["vec_id"]]
-                n_frames, n_texts = len(set(df_verb["frame"])), len(
-                    verb_vec_array
-                )
                 lth_dict = {
                     "verb": verb,
-                    "n_frames": n_frames,
-                    "n_texts": n_texts,
+                    "n_frames": len(set(df_verb["frame"])),
+                    "n_texts": len(verb_vec_array),
                 }
                 if len(verb_vec_array) >= 2:
                     z = linkage(
                         pdist(verb_vec_array),
-                        method="average",
+                        method=self.clustering_method1,
                         preserve_input=False,
                     )
                     for _, _, lth, _ in z:
