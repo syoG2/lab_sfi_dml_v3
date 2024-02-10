@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from fadml.modules.loss_classification import AdaCos, ArcFace
-from fadml.modules.loss_distance import ContrastiveLoss, TripletLoss
 from transformers import AutoConfig, AutoModel
+
+from sfidml.modules.loss_classification import AdaCos, ArcFace
+from sfidml.modules.loss_distance import ContrastiveLoss, TripletLoss
 
 
 class BaseNet(nn.Module):
@@ -43,26 +44,20 @@ class BaseNet(nn.Module):
 
 class SiameseNet(BaseNet):
     def __init__(self, pretrained_model_name, normalization, margin, device):
-        super(SiameseNet, self).__init__(
-            pretrained_model_name, normalization, device
-        )
+        super(SiameseNet, self).__init__(pretrained_model_name, normalization, device)
         self.margin = margin
         self.criterion = ContrastiveLoss(margin)
 
     def compute_loss(self, inputs):
         embeddings1 = self.forward(inputs["instance1"])
         embeddings2 = self.forward(inputs["instance2"])
-        loss = self.criterion(
-            embeddings1, embeddings2, inputs["label"].to(self.device)
-        )
+        loss = self.criterion(embeddings1, embeddings2, inputs["label"].to(self.device))
         return loss
 
 
 class TripletNet(BaseNet):
     def __init__(self, pretrained_model_name, normalization, margin, device):
-        super(TripletNet, self).__init__(
-            pretrained_model_name, normalization, device
-        )
+        super(TripletNet, self).__init__(pretrained_model_name, normalization, device)
         self.margin = margin
         self.criterion = TripletLoss(self.margin)
 
@@ -99,17 +94,13 @@ class ClassificationNet(BaseNet):
         elif "adacos" in self.model_name:
             self.metric_fc = AdaCos(self.hidden_size, self.label_size)
         elif "arcface" in self.model_name:
-            self.metric_fc = ArcFace(
-                self.hidden_size, self.label_size, m=margin
-            )
+            self.metric_fc = ArcFace(self.hidden_size, self.label_size, m=margin)
 
     def compute_loss(self, inputs):
         embeddings = self.forward(inputs)
         if "softmax" in self.model_name:
             outputs = self.metric_fc(embeddings)
         else:
-            outputs = self.metric_fc(
-                embeddings, inputs["label"].to(self.device)
-            )
+            outputs = self.metric_fc(embeddings, inputs["label"].to(self.device))
         loss = self.criterion(outputs, inputs["label"].to(self.device))
         return loss

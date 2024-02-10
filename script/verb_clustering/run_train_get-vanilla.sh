@@ -5,7 +5,10 @@ data_dir=../../data/verb_clustering
 
 settings=(all_3_0 all_3_1 all_3_2)
 
-pretrained_model_name=bert-base-uncased
+# pretrained_model_name=bert-base-uncased
+# pretrained_model_name=bert-large-uncased
+# pretrained_model_name=roberta-base
+pretrained_model_name=roberta-large
 
 vec_types=(word mask)
 

@@ -3,8 +3,8 @@
 source_dir=../../source/verb_clustering
 data_dir=../../data/verb_clustering
 
-settings=(all_3_0 all_3_1 all_3_2)
-# settings=(all_3_2)
+# settings=(all_3_0 all_3_1 all_3_2)
+settings=(all_3_2)
 
 pretrained_model_name=bert-base-uncased
 

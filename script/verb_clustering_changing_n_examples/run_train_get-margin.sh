@@ -1,14 +1,15 @@
 #!/bin/bash
 
 source_dir=../../source/verb_clustering
-data_dir=../../data/verb_clustering
+data_dir=../../data/verb_clustering_changing_n_examples
 
-settings=(all_3_0 all_3_1 all_3_2)
+# settings=(vf01_3_0 vf01_3_1 vf01_3_2)
+# settings+=(vf02_3_0 vf02_3_1 vf02_3_2)
+# settings+=(vf05_3_0 vf05_3_1 vf05_3_2)
+# settings+=(vf10_3_0 vf10_3_1 vf10_3_2)
+settings+=(vf20_3_0 vf20_3_1 vf20_3_2)
 
-# pretrained_model_name=bert-base-uncased
-# pretrained_model_name=bert-large-uncased
-# pretrained_model_name=roberta-base
-pretrained_model_name=roberta-large
+pretrained_model_name=bert-base-uncased
 
 vec_types=(word mask)
 # vec_types=(word)
@@ -25,7 +26,7 @@ margins=(0.01 0.02 0.05 0.1)
 
 run_numbers=(00 01 02 03)
 
-device=cuda:0
+device=cuda:3
 
 for setting in ${settings[@]}; do
     for vec_type in ${vec_types[@]}; do

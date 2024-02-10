@@ -7,7 +7,8 @@ data_dir=../../data/verb_clustering
 settings=(all_3_2)
 
 pretrained_model_name=bert-base-uncased
-model_names=(vanilla softmax_classification adacos_classification siamese_distance triplet_distance arcface_classification)
+# model_names=(vanilla softmax_classification adacos_classification siamese_distance triplet_distance arcface_classification)
+model_names=(vanilla softmax_classification adacos_classification)
 
 vec_types=(word mask wm)
 # vec_types=(word)
@@ -15,7 +16,8 @@ vec_types=(word mask wm)
 # vec_types=(wm)
 
 # clustering_name_method=(onestep-average twostep-xmeans-average)
-clustering_name_method=(twostep-xmeans-average)
+clustering_name_method=(onestep-average)
+# clustering_name_method=(twostep-xmeans-average)
 
 splits=(dev test)
 

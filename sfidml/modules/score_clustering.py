@@ -39,7 +39,6 @@ def calculate_bcubed(true, pred):
     avg_precision = sum_precision / len(instances)
     avg_recall = sum_recall / len(instances)
     f_score = 2 * avg_precision * avg_recall / (avg_precision + avg_recall)
-
     return avg_precision, avg_recall, f_score
 
 

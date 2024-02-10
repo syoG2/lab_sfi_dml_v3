@@ -80,7 +80,7 @@ def main(args):
         output_dir.mkdir(parents=True, exist_ok=True)
 
         for split in ["test", "dev", "train"]:
-            df_split = df[df[setting] == split].copy()
+            df_split = df[df[setting] == split]
             write_jsonl(
                 df_split.to_dict("records"),
                 output_dir / f"exemplars_{split}.jsonl",

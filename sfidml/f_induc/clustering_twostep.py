@@ -24,11 +24,12 @@ class TwostepClustering:
         if self.clustering_method1 == "average":
             if len(vec_array) >= 2:
                 z = linkage(
-                    pdist(vec_array), method="average", preserve_input=False
+                    pdist(vec_array),
+                    method="average",
+                    metric="euclidean",
+                    preserve_input=False,
                 )
-                cluster_array = fcluster(
-                    z, t=params["lth"], criterion="distance"
-                )
+                cluster_array = fcluster(z, t=params["lth"], criterion="distance")
             else:
                 cluster_array = np.array([1])
         elif self.clustering_method1 == "xmeans":
@@ -116,9 +117,11 @@ class TwostepClustering:
                     z = linkage(
                         pdist(verb_vec_array),
                         method=self.clustering_method1,
+                        metric="euclidean",
                         preserve_input=False,
                     )
                     for _, _, lth, _ in z:
+                        lth_dict = lth_dict.copy()
                         lth_dict["lth"] = lth
                         lth_list.append(lth_dict)
                 else:
@@ -147,9 +150,7 @@ class TwostepClustering:
         vec_array_2nd, df_2nd_list = [], []
         for verb in sorted(set(df["verb"])):
             df_1st, vec_array_1st = self._make_vec_1st(df, vec_array1, verb)
-            df_1st.loc[:, "plu_local"] = self._clustering_1st(
-                vec_array_1st, params
-            )
+            df_1st.loc[:, "plu_local"] = self._clustering_1st(vec_array_1st, params)
             _vec_array_2nd, _df_2nd = self._make_vec_2nd(
                 df_1st, vec_array2, len(vec_array_2nd)
             )

@@ -28,9 +28,7 @@ def main(args):
     if args.clustering_name == "onestep":
         clustering = OnestepClustering(args.clustering_method)
     elif args.clustering_name == "twostep":
-        clustering = TwostepClustering(
-            args.clustering_method1, args.clustering_method2
-        )
+        clustering = TwostepClustering(args.clustering_method1, args.clustering_method2)
 
     best_vec_type2run_number = {}
     for vec_type in tqdm(vec_types):
@@ -45,14 +43,10 @@ def main(args):
             if args.clustering_name == "onestep":
                 df_output = clustering.step(df_vec, vec_array, params)
             elif args.clustering_name == "twostep":
-                df_output = clustering.step(
-                    df_vec, vec_array, vec_array, params
-                )
+                df_output = clustering.step(df_vec, vec_array, vec_array, params)
 
             true = df_output.groupby("frame")["ex_idx"].agg(list).tolist()
-            pred = (
-                df_output.groupby("frame_cluster")["ex_idx"].agg(list).tolist()
-            )
+            pred = df_output.groupby("frame_cluster")["ex_idx"].agg(list).tolist()
             bcf = calculate_bcubed(true, pred)[2]
             if best_bcf < bcf:
                 best_bcf = bcf
@@ -68,14 +62,10 @@ def main(args):
             if args.clustering_name == "onestep":
                 df_output = clustering.step(df_vec, vec_array, params)
             elif args.clustering_name == "twostep":
-                df_output = clustering.step(
-                    df_vec, vec_array, vec_array, params
-                )
+                df_output = clustering.step(df_vec, vec_array, vec_array, params)
 
             true = df_output.groupby("frame")["ex_idx"].agg(list).tolist()
-            pred = (
-                df_output.groupby("frame_cluster")["ex_idx"].agg(list).tolist()
-            )
+            pred = df_output.groupby("frame_cluster")["ex_idx"].agg(list).tolist()
             bcf = calculate_bcubed(true, pred)[2]
             if best_bcf < bcf:
                 best_bcf = bcf
@@ -104,9 +94,7 @@ if __name__ == "__main__":
     parser.add_argument("--vec_type", type=str, choices=["word", "mask", "wm"])
     parser.add_argument("--run_numbers", type=str, nargs="*", default=["00"])
 
-    parser.add_argument(
-        "--clustering_name", type=str, choices=["onestep", "twostep"]
-    )
+    parser.add_argument("--clustering_name", type=str, choices=["onestep", "twostep"])
 
     parser.add_argument(
         "--clustering_method",

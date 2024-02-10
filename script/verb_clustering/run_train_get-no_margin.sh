@@ -5,10 +5,13 @@ data_dir=../../data/verb_clustering
 
 settings=(all_3_0 all_3_1 all_3_2)
 
-pretrained_model_name=bert-base-uncased
+# pretrained_model_name=bert-base-uncased
+# pretrained_model_name=bert-large-uncased
+# pretrained_model_name=roberta-base
+pretrained_model_name=roberta-large
 
-# vec_types=(word mask)
-vec_types=(word)
+vec_types=(word mask)
+# vec_types=(word)
 # vec_types=(mask)
 
 # model_name=softmax_classification
@@ -16,7 +19,7 @@ model_name=adacos_classification
 
 run_numbers=(00)
 
-device=cuda:3
+device=cuda:2
 
 for setting in ${settings[@]}; do
     for vec_type in ${vec_types[@]}; do
