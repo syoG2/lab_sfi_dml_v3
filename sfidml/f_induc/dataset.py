@@ -33,9 +33,7 @@ class BaseDataset(Dataset):
     def __init__(self, df, pretrained_model_name, vec_type):
         self.df = df
         self.pretrained_model_name = pretrained_model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.pretrained_model_name
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name)
         self.vec_type = vec_type
         self._preprocess()
 
@@ -69,9 +67,7 @@ class SiameseDataset(Dataset):
     def __init__(self, df, pretrained_model_name, vec_type):
         self.df = df
         self.pretrained_model_name = pretrained_model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.pretrained_model_name
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name)
         self.vec_type = vec_type
         self._preprocess()
         self._make_f_dict()
@@ -103,12 +99,8 @@ class SiameseDataset(Dataset):
     def _make_f_dict(self):
         self.f2pos, self.f2neg = {}, {}
         for frame in sorted(set(self.df["frame"])):
-            self.f2pos[frame] = list(
-                self.df[self.df["frame"] == frame]["ex_idx"]
-            )
-            self.f2neg[frame] = list(
-                self.df[self.df["frame"] != frame]["ex_idx"]
-            )
+            self.f2pos[frame] = list(self.df[self.df["frame"] == frame]["ex_idx"])
+            self.f2neg[frame] = list(self.df[self.df["frame"] != frame]["ex_idx"])
 
     def make_dataset(self):
         self.out_inputs = []
@@ -141,9 +133,7 @@ class TripletDataset(Dataset):
     def __init__(self, df, pretrained_model_name, vec_type):
         self.df = df
         self.pretrained_model_name = pretrained_model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.pretrained_model_name
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name)
         self.vec_type = vec_type
         self._preprocess()
         self._make_f_dict()
@@ -175,12 +165,8 @@ class TripletDataset(Dataset):
     def _make_f_dict(self):
         self.f2pos, self.f2neg = {}, {}
         for frame in sorted(set(self.df["frame"])):
-            self.f2pos[frame] = list(
-                self.df[self.df["frame"] == frame]["ex_idx"]
-            )
-            self.f2neg[frame] = list(
-                self.df[self.df["frame"] != frame]["ex_idx"]
-            )
+            self.f2pos[frame] = list(self.df[self.df["frame"] == frame]["ex_idx"])
+            self.f2neg[frame] = list(self.df[self.df["frame"] != frame]["ex_idx"])
 
     def make_dataset(self):
         self.out_inputs = []
@@ -209,9 +195,7 @@ class ClassificationDataset(Dataset):
     def __init__(self, df, pretrained_model_name, vec_type, frame2label=None):
         self.df = df
         self.pretrained_model_name = pretrained_model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.pretrained_model_name
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name)
         self.vec_type = vec_type
 
         if frame2label is None:
