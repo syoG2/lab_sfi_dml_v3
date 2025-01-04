@@ -1,3 +1,4 @@
+import warnings # TODO:根本解決でない
 from collections import Counter
 
 import numpy as np
@@ -9,6 +10,8 @@ from scipy.spatial.distance import pdist
 from scipy.special import comb
 from sklearn.metrics import confusion_matrix
 
+
+np.warnings = warnings  # TODO:根本解決でない
 
 class TwostepClustering:
     def __init__(self, clustering_method1, clustering_method2):
