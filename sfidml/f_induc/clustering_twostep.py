@@ -1,4 +1,4 @@
-import warnings # TODO:根本解決でない
+import warnings  # TODO:根本解決でない
 from collections import Counter
 
 import numpy as np
@@ -10,8 +10,8 @@ from scipy.spatial.distance import pdist
 from scipy.special import comb
 from sklearn.metrics import confusion_matrix
 
-
 np.warnings = warnings  # TODO:根本解決でない
+
 
 class TwostepClustering:
     def __init__(self, clustering_method1, clustering_method2):
@@ -139,8 +139,11 @@ class TwostepClustering:
                 + 1e-6
             )
         elif self.clustering_method1 == "xmeans":
+            # params["kmax"] = max(
+            #     df.groupby("verb").agg(set)["frame"].apply(lambda x: len(x))
+            # )
             params["kmax"] = max(
-                df.groupby("verb").agg(set)["frame"].apply(lambda x: len(x))
+                df.groupby("verb")["frame"].agg(set).apply(lambda x: len(x))
             )
 
         vf2f = {vf: f for vf, f in zip(df["verb_frame"], df["frame"])}

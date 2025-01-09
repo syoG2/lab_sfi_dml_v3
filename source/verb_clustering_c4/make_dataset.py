@@ -68,7 +68,11 @@ def read_c4_datasets(
                     f"./data/preprocessing/c4/preprocess/{text_input_style}/{split_name}_{file_id:05}/lu/exemplar_{part_id}.jsonl"
                 )
                 if input_file.exists():
+                    # df = pd.read_json(input_file, lines=True, engine="pyarrow")
                     df = pd.read_json(input_file, lines=True)
+                    df = df[df["lu_name"].str.contains(r"^[a-zA-Z\s\W]+$", regex=True)]
+                    df["target_widxs"] = df["target_widx"]
+                    df["target_widx"] = df["target_widx_head"].apply(lambda x: x[2])
                     df = df[
                         [
                             "ex_idx",
@@ -77,9 +81,11 @@ def read_c4_datasets(
                             "verb_frame",
                             "text_widx",
                             "target_widx",
+                            "target_widxs",
                             "preprocessed_lu_idx",
                             "source",
                             "lu_name",
+                            "target_widx_head",
                         ]
                     ]
 
@@ -96,6 +102,7 @@ def main(args):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.DataFrame(read_jsonl(args.input_file))
+    df["target_widxs"] = df["target_widx"]
     df["target_widx"] = df["target_widx_head"].apply(lambda x: x[2])
     df["frame"] = df["frame_name"]
     df["verb_frame"] = df["verb"].str.cat(df["frame"], sep=":")
@@ -107,48 +114,198 @@ def main(args):
             "verb_frame",
             "text_widx",
             "target_widx",
+            "target_widxs",
             "preprocessed_lu_idx",
             "source",
             "lu_name",
+            "target_widx_head",
         ]
     ]
     # df.loc[:, ["source"]] = "framenet"
 
     df = decide_sets(df, args.setting_prefix, args.n_splits)
 
+    # if args.c4_rate > 0:
+    #     df_c4 = read_c4_datasets(
+    #         [0, 1, 2, 3, 4],
+    #         list(range(350)),
+    #         ["train"],
+    #         df["lu_name"].unique(),
+    #     )
+    #     for n_tmp in tqdm(range(args.n_splits)):
+    #         setting_tmp = f"{args.setting_prefix}_{args.n_splits}_{n_tmp}"
+    #         df_c4.loc[:, [setting_tmp]] = "disuse"
+
+    #     with tqdm(range(args.n_splits)) as pbar:
+    #         for n in pbar:
+    #             setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
+    #             df_c4_mutched = pd.DataFrame()
+
+    #             with tqdm(
+    #                 df[df[setting] == "test"]["lu_name"].value_counts().items(),
+    #                 total=len(df[df[setting] == "test"]["lu_name"].value_counts()),
+    #             ) as pbar2:
+    #                 for lu_name, count in pbar2:
+    #                     # tqdm.write(f"{lu_name}:{count}")
+    #                     df_c4_tmp = df_c4[df_c4["lu_name"] == lu_name]
+    #                     df_c4_tmp.loc[:, [setting]] = "test"
+    #                     if len(df_c4_tmp) < count:
+    #                         tqdm.write(
+    #                             f"Warning: {lu_name}: {len(df_c4_tmp)} < {count}"
+    #                         )
+    #                         df = df[df["lu_name"] != lu_name]
+    #                     else:
+    #                         df_c4_tmp = df_c4_tmp.sample(count, random_state=0)
+    #                         df_c4_mutched = pd.concat(
+    #                             [df_c4_mutched, df_c4_tmp], ignore_index=True
+    #                         )
+    #                         df_c4 = df_c4.drop(df_c4_tmp.index)
+    #                 df = pd.concat([df, df_c4_mutched], ignore_index=True)
+
+    # if args.c4_rate > 0:
+    #     df_c4 = read_c4_datasets(
+    #         [0, 1, 2, 3, 4],
+    #         list(range(350)),
+    #         ["train"],
+    #         df["lu_name"].unique(),
+    #     )
+    #     settings = [
+    #         f"{args.setting_prefix}_{args.n_splits}_{n}" for n in range(args.n_splits)
+    #     ]
+    #     df_c4[settings] = "disuse"
+
+    #     for n in tqdm(range(args.n_splits)):
+    #         setting = settings[n]
+    #         for lu_name in tqdm(df[df[setting] == "test"]["lu_name"].unique()):
+    #             count = df[(df[setting] == "test") & (df["lu_name"] == lu_name)].shape[
+    #                 0
+    #             ]
+    #             df_c4_subset = df_c4[df_c4["lu_name"] == lu_name]
+    #             c4_count = df_c4_subset.shape[0]
+    #             if c4_count >= count:
+    #                 additional = df_c4_subset.sample(count, random_state=0)
+    #                 additional[setting] = "test"
+    #                 df_c4.drop(additional.index, inplace=True)
+    #                 df = pd.concat([df, additional], ignore_index=True)
+    #             else:
+    #                 print(f"Warning: {lu_name}: {c4_count} < {count}")
+    #                 df = df[~((df[setting] == "test") & (df["lu_name"] == lu_name))]
+
     if args.c4_rate > 0:
-        df_c4 = read_c4_datasets(
-            [0, 1, 2, 3, 4],
-            list(range(350)),
-            ["train"],
-            df["lu_name"].unique(),
-        )
-        for n_tmp in tqdm(range(args.n_splits)):
-            setting_tmp = f"{args.setting_prefix}_{args.n_splits}_{n_tmp}"
-            df_c4.loc[:, [setting_tmp]] = "unused"
-
-        with tqdm(range(args.n_splits)) as pbar:
-            for n in pbar:
-                setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
-                df_c4_mutched = pd.DataFrame()
-
-                with tqdm(
-                    df[df[setting] == "test"]["lu_name"].value_counts().items()
-                ) as pbar2:
-                    for lu_name, count in pbar2:
-                        # tqdm.write(f"{lu_name}:{count}")
-                        df_c4_tmp = df_c4[df_c4["lu_name"] == lu_name]
-                        df_c4_tmp.loc[:, [setting]] = "test"
-                        if len(df_c4_tmp) < count:
-                            tqdm.write(
-                                f"Warning: {lu_name}: {len(df_c4_tmp)} < {count}"
-                            )
-                        else:
-                            df_c4_tmp = df_c4_tmp.sample(count, random_state=0)
-                        df_c4_mutched = pd.concat(
-                            [df_c4_mutched, df_c4_tmp], ignore_index=True
+        settings = [
+            f"{args.setting_prefix}_{args.n_splits}_{n}" for n in range(args.n_splits)
+        ]
+        lu_name_list = [
+            list(df[df[setting] == "test"]["lu_name"].unique()) for setting in settings
+        ]
+        file_id_list = [0, 1, 2, 3, 4]
+        part_id_list = list(range(350))
+        split_name_list = ["train"]
+        text_input_style = "token0"
+        for file_id in tqdm(file_id_list, leave=False):
+            for part_id in tqdm(part_id_list, leave=False):
+                for split_name in tqdm(split_name_list, leave=False):
+                    input_file: Path = Path(
+                        f"./data/preprocessing/c4/preprocess/{text_input_style}/{split_name}_{file_id:05}/lu/exemplar_{part_id}.jsonl"
+                    )
+                    if input_file.exists():
+                        # df_c4 = pd.read_json(input_file, lines=True, engine="pyarrow")
+                        df_c4 = pd.read_json(input_file, lines=True)
+                        df_c4 = df_c4[df_c4["lu_name"].isin(df["lu_name"].unique())]
+                        df_c4["target_widxs"] = df_c4["target_widx"]
+                        df_c4["target_widx"] = df_c4["target_widx_head"].apply(
+                            lambda x: x[2]
                         )
-                    df = pd.concat([df, df_c4_mutched], ignore_index=True)
+                        df_c4 = df_c4[
+                            [
+                                "ex_idx",
+                                "verb",
+                                "frame",
+                                "verb_frame",
+                                "text_widx",
+                                "target_widx",
+                                "target_widxs",
+                                "preprocessed_lu_idx",
+                                "source",
+                                "lu_name",
+                                "target_widx_head",
+                            ]
+                        ]
+                        df_c4[settings] = "disuse"
+
+                        for n in tqdm(range(args.n_splits), leave=False):
+                            setting = settings[n]
+                            additional = df_c4[df_c4["lu_name"].isin(lu_name_list[n])]
+                            additional.loc[:, setting] = "test"
+                            df = pd.concat([df, additional], ignore_index=True)
+
+                            # 必要なデータのみをフィルタリング
+                            test_df = df[
+                                (df[setting] == "test")
+                                & df["lu_name"].isin(lu_name_list[n])
+                            ]
+
+                            # グループ化してカウントを取得
+                            counts = (
+                                test_df.groupby(["lu_name", "source"])
+                                .size()
+                                .unstack(fill_value=0)
+                            )
+
+                            # framenet_count と c4_count を取得
+                            counts["framenet_count"] = counts.get("framenet", 0)
+                            counts["c4_count"] = counts.get("c4", 0)
+
+                            # フラグを作成して削除対象を特定
+                            lu_to_remove = counts[
+                                counts["framenet_count"] <= counts["c4_count"]
+                            ].index.tolist()
+
+                            # 一括で削除
+                            lu_name_list[n] = [
+                                lu for lu in lu_name_list[n] if lu not in lu_to_remove
+                            ]
+
+                            # for lu_name in tqdm(lu_name_list[n], leave=False):
+                            #     framenet_count = df[
+                            #         (df[setting] == "test")
+                            #         & (df["lu_name"] == lu_name)
+                            #         & (df["source"] == "framenet")
+                            #     ].shape[0]
+                            #     c4_count = df[
+                            #         (df[setting] == "test")
+                            #         & (df["lu_name"] == lu_name)
+                            #         & (df["source"] == "c4")
+                            #     ].shape[0]
+                            #     # tqdm.write(f"{lu_name}: {framenet_count} , {c4_count}")
+                            #     if framenet_count <= c4_count:
+                            #         lu_name_list[n].remove(lu_name)
+                    else:
+                        tqdm.write(f"{input_file} is not found.")
+
+        for n in tqdm(range(args.n_splits)):
+            setting = settings[n]
+            for lu_name in tqdm(df[df[setting] == "test"]["lu_name"].unique()):
+                framenet_count = df[
+                    (df["source"] == "framenet")
+                    & (df[setting] == "test")
+                    & (df["lu_name"] == lu_name)
+                ].shape[0]
+                c4_count = df[
+                    (df["source"] == "c4")
+                    & (df[setting] == "test")
+                    & (df["lu_name"] == lu_name)
+                ].shape[0]
+                if c4_count < framenet_count:
+                    tqdm.write(f"Warning: {lu_name}: {framenet_count} > {c4_count}")
+                    df = df[~((df[setting] == "test") & (df["lu_name"] == lu_name))]
+                else:
+                    remove = df[
+                        (df["source"] == "c4")
+                        & (df[setting] == "test")
+                        & (df["lu_name"] == lu_name)
+                    ].sample(c4_count - framenet_count, random_state=0)
+                    df = df.drop(remove.index)
 
     for n in tqdm(range(args.n_splits)):
         setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
