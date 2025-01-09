@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source_dir=./source/verb_clustering
-data_dir=./data/verb_clustering
+source_dir=./source/verb_clustering_c4
+data_dir=./data/verb_clustering_c4
 
 settings=(all_3_0 all_3_1 all_3_2)
 
@@ -19,7 +19,7 @@ model_name=adacos_classification
 
 run_numbers=(00)
 
-device=cuda:1
+device=cuda:2
 
 for setting in "${settings[@]}"; do
     for vec_type in "${vec_types[@]}"; do

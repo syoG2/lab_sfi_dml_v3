@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source_dir=./source/verb_clustering
-data_dir=./data/verb_clustering
+source_dir=./source/verb_clustering_c4
+data_dir=./data/verb_clustering_c4
 
 setting=all_3_1
 pretrained_model_name=bert-base-uncased

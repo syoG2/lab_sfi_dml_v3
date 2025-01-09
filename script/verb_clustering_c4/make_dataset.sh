@@ -9,7 +9,7 @@ n_splits=3
 
 uv run python ${source_dir}/make_dataset.py \
     --input_file ${input_dir}/exemplars.jsonl \
-    --output_dir ${data_dir}/dataset \
+    --output_dir ${data_dir} \
     --setting_prefix ${setting_prefix} \
     --n_splits ${n_splits} \
     --c4_rate 1

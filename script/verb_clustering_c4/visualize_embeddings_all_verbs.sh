@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source_dir=./source/verb_clustering
-data_dir=./data/verb_clustering
+source_dir=./source/verb_clustering_c4
+data_dir=./data/verb_clustering_c4
 
 settings=(all_3_0 all_3_1 all_3_2)
 pretrained_model_name=bert-base-uncased
@@ -36,7 +36,7 @@ vec_type=mask
 #         for random_state in 3; do
 #             d1=${setting}
 #             d2=${model_name}
-#             python ${source_dir}/visualize_embeddings_all_verbs.py \
+#             uv run python ${source_dir}/visualize_embeddings_all_verbs.py \
 #                 --input_dir ${data_dir}/evaluation${d1}/embeddings \
 #                 --input_mlruns_dir ${data_dir}/evaluation/${d1}/mlruns \
 #                 --output_dir ${data_dir}/visualization_all_verbs2/${d1}/${d2} \

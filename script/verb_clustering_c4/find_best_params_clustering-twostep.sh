@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source_dir=./source/verb_clustering
-data_dir=./data/verb_clustering
+source_dir=./source/verb_clustering_c4
+data_dir=./data/verb_clustering_c4
 
 settings=(all_3_0 all_3_1 all_3_2)
 # settings=(all_3_1)
@@ -12,7 +12,7 @@ pretrained_model_name=bert-base-uncased
 # run_numbers=(00)
 # model_names=(siamese_distance triplet_distance arcface_classification)
 # run_numbers=(00 01 02 03)
-model_names=(triplet_distance)
+model_names=(siamese_distance)
 run_numbers=(00 01 02 03)
 
 vec_types=(word mask wm)

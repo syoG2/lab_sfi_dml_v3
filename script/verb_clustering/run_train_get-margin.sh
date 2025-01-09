@@ -14,14 +14,14 @@ vec_types=(word mask)
 # vec_types=(word)
 # vec_types=(mask)
 
-model_name=siamese_distance
-margins=(0.1 0.2 0.5 1.0)
+# model_name=siamese_distance
+# margins=(0.1 0.2 0.5 1.0)
 
 # model_name=triplet_distance
 # margins=(0.1 0.2 0.5 1.0)
 
-# model_name=arcface_classification
-# margins=(0.01 0.02 0.05 0.1)
+model_name=arcface_classification
+margins=(0.01 0.02 0.05 0.1)
 
 run_numbers=(00 01 02 03)
 run_numbers=(03)

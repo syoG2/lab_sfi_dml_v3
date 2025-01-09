@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source_dir=./source/verb_clustering
-data_dir=./data/verb_clustering
+source_dir=./source/verb_clustering_c4
+data_dir=./data/verb_clustering_c4
 
 settings=(all_3_0 all_3_1 all_3_2)
 # settings=(all_3_0)
@@ -11,15 +11,16 @@ pretrained_model_name=bert-base-uncased
 # pretrained_model_name=roberta-base
 # pretrained_model_name=roberta-large
 
-model_names=(vanilla softmax_classification adacos_classification)
-run_numbers=(00)
+# model_names=(vanilla softmax_classification adacos_classification)
+# model_names=(adacos_classification)
+# run_numbers=(00)
 
 # model_names=(siamese_distance triplet_distance arcface_classification)
 # model_names=(siamese_distance)
 # model_names=(triplet_distance)
-# model_names=(arcface_classification)
+model_names=(arcface_classification)
 # run_numbers=(00 01 02 03)
-# run_numbers=(03)
+run_numbers=(03)
 
 vec_types=(word mask wm)
 # vec_types=(word)

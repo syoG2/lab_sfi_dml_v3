@@ -10,8 +10,8 @@ pretrained_model_name=bert-base-uncased
 # pretrained_model_name=bert-large-uncased
 # pretrained_model_name=roberta-large
 
-# model_names=(vanilla softmax_classification adacos_classification siamese_distance triplet_distance arcface_classification)
-model_names=(triplet_distance)
+model_names=(vanilla softmax_classification adacos_classification siamese_distance triplet_distance arcface_classification)
+# model_names=(triplet_distance)
 
 vec_types=(word mask wm)
 # vec_types=(wm)
@@ -19,7 +19,7 @@ vec_types=(word mask wm)
 # clustering_name_methods=(onestep-average twostep-xmeans-average)
 clustering_name_methods=(twostep-xmeans-average)
 
-split=test
+split="test"
 
 for model_name in "${model_names[@]}"; do
     for vec_type in "${vec_types[@]}"; do
