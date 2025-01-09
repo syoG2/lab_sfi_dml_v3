@@ -10,7 +10,7 @@ dump/
 temp/
 analysis/
 
-*.ipynb
+# *.ipynb
 *try*
 *old*
 *copy*
