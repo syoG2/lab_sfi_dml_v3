@@ -19,8 +19,7 @@ pretrained_model_name=bert-base-uncased
 # model_names=(siamese_distance)
 # model_names=(triplet_distance)
 model_names=(arcface_classification)
-# run_numbers=(00 01 02 03)
-run_numbers=(03)
+run_numbers=(00 01 02 03)
 
 vec_types=(word mask wm)
 # vec_types=(word)
@@ -31,6 +30,8 @@ clustering_name=twostep
 clustering_method1=xmeans
 clustering_method2=average
 
+c4_rate=2
+
 for setting in "${settings[@]}"; do
     for model_name in "${model_names[@]}"; do
         for vec_type in "${vec_types[@]}"; do
@@ -38,8 +39,8 @@ for setting in "${settings[@]}"; do
             d2=${vec_type}/${clustering_name}-${clustering_method1}-${clustering_method2}
 
             uv run python ${source_dir}/find_best_params_clustering.py \
-                --input_dir "${data_dir}/embedding/${d1}" \
-                --output_dir "${data_dir}/best_params_clustering/${d1}/${d2}" \
+                --input_dir "${data_dir}/embedding/${c4_rate}/${d1}" \
+                --output_dir "${data_dir}/best_params_clustering/${c4_rate}/${d1}/${d2}" \
                 --vec_type "${vec_type}" \
                 --run_numbers "${run_numbers[@]}" \
                 --clustering_name ${clustering_name} \
@@ -47,9 +48,9 @@ for setting in "${settings[@]}"; do
                 --clustering_method2 ${clustering_method2}
 
             uv run python ${source_dir}/perform_clustering.py \
-                --input_dir "${data_dir}/embedding/${d1}" \
-                --output_dir "${data_dir}/clustering/${d1}/${d2}" \
-                --input_params_file "${data_dir}/best_params_clustering/${d1}/${d2}/best_params.json" \
+                --input_dir "${data_dir}/embedding/${c4_rate}/${d1}" \
+                --output_dir "${data_dir}/clustering/${c4_rate}/${d1}/${d2}" \
+                --input_params_file "${data_dir}/best_params_clustering/${c4_rate}/${d1}/${d2}/best_params.json" \
                 --clustering_name ${clustering_name} \
                 --clustering_method1 ${clustering_method1} \
                 --clustering_method2 ${clustering_method2}
@@ -57,9 +58,9 @@ for setting in "${settings[@]}"; do
             splits=(dev test)
             for split in "${splits[@]}"; do
                 uv run python ${source_dir}/evaluate_clustering.py \
-                    --input_file "${data_dir}/clustering/${d1}/${d2}/exemplars_${split}.jsonl" \
-                    --input_params_file "${data_dir}/clustering/${d1}/${d2}/params.json" \
-                    --output_dir "${data_dir}/evaluate_clustering_ours/${d1}/${d2}" \
+                    --input_file "${data_dir}/clustering/${c4_rate}/${d1}/${d2}/exemplars_${split}.jsonl" \
+                    --input_params_file "${data_dir}/clustering/${c4_rate}/${d1}/${d2}/params.json" \
+                    --output_dir "${data_dir}/evaluate_clustering_ours/${c4_rate}/${d1}/${d2}" \
                     --split "${split}"
             done
         done

@@ -17,9 +17,10 @@ vec_types=(word mask wm)
 # vec_types=(wm)
 
 clustering_name_methods=(onestep-average twostep-xmeans-average)
-clustering_name_methods=(twostep-xmeans-average)
+# clustering_name_methods=(twostep-xmeans-average)
 
 split="test"
+c4_rate=2
 
 for model_name in "${model_names[@]}"; do
     for vec_type in "${vec_types[@]}"; do
@@ -30,12 +31,12 @@ for model_name in "${model_names[@]}"; do
             input_dirs=()
             for setting in "${settings[@]}"; do
                 d1=${setting}
-                input_dirs+=("${data_dir}/evaluate_clustering_ours/${d1}/${d2}/${d3}")
+                input_dirs+=("${data_dir}/evaluate_clustering_ours/${c4_rate}/${d1}/${d2}/${d3}")
             done
 
             uv run python ${source_dir}/aggregate_scores.py \
                 --input_dirs "${input_dirs[@]}" \
-                --output_dir "${data_dir}/aggregate_scores_clustering/${d2}/${d3}" \
+                --output_dir "${data_dir}/aggregate_scores_clustering/${c4_rate}/${d2}/${d3}" \
                 --split ${split}
         done
     done

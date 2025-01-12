@@ -16,7 +16,8 @@ model_name=vanilla
 
 run_numbers=(00)
 
-device=cuda:0
+device=cuda:3
+c4_rate=2
 
 for setting in "${settings[@]}"; do
     for vec_type in "${vec_types[@]}"; do
@@ -24,9 +25,9 @@ for setting in "${settings[@]}"; do
             d1=${setting}
             d2=${pretrained_model_name}/${model_name}/${vec_type}/${run_number}
             uv run python ${source_dir}/train_model.py \
-                --input_train_file "${data_dir}/dataset/${d1}/exemplars_train.jsonl" \
-                --input_dev_file "${data_dir}/dataset/${d1}/exemplars_dev.jsonl" \
-                --output_dir "${data_dir}/train_model/${d1}/${d2}" \
+                --input_train_file "${data_dir}/dataset/${c4_rate}/${d1}/exemplars_train.jsonl" \
+                --input_dev_file "${data_dir}/dataset/${c4_rate}/${d1}/exemplars_dev.jsonl" \
+                --output_dir "${data_dir}/train_model/${c4_rate}/${d1}/${d2}" \
                 --pretrained_model_name "${pretrained_model_name}" \
                 --model_name ${model_name} \
                 --vec_type "${vec_type}" \
@@ -46,10 +47,10 @@ for setting in "${settings[@]}"; do
                 d1=${setting}
                 d2=${pretrained_model_name}/${model_name}/${vec_type}/${run_number}
                 uv run python ${source_dir}/get_embedding.py \
-                    --input_file "${data_dir}/dataset/${d1}/exemplars_${split}.jsonl" \
-                    --input_params_file "${data_dir}/train_model/${d1}/${d2}/params.json" \
-                    --input_model_file "${data_dir}/train_model/${d1}/${d2}/pretrained_model_last.pth" \
-                    --output_dir "${data_dir}/embedding/${d1}/${d2}"
+                    --input_file "${data_dir}/dataset/${c4_rate}/${d1}/exemplars_${split}.jsonl" \
+                    --input_params_file "${data_dir}/train_model/${c4_rate}/${d1}/${d2}/params.json" \
+                    --input_model_file "${data_dir}/train_model/${c4_rate}/${d1}/${d2}/pretrained_model_last.pth" \
+                    --output_dir "${data_dir}/embedding/${c4_rate}/${d1}/${d2}"
             done
         done
     done

@@ -198,11 +198,11 @@ def main(args):
         lu_name_list = [
             list(df[df[setting] == "test"]["lu_name"].unique()) for setting in settings
         ]
-        file_id_list = [0, 1, 2, 3, 4]
+        file_id_list = [0, 1, 2, 3, 4, 5]
         part_id_list = list(range(350))
         split_name_list = ["train"]
         text_input_style = "token0"
-        for file_id in tqdm(file_id_list, leave=False):
+        for file_id in tqdm(file_id_list):
             for part_id in tqdm(part_id_list, leave=False):
                 for split_name in tqdm(split_name_list, leave=False):
                     input_file: Path = Path(
@@ -211,6 +211,9 @@ def main(args):
                     if input_file.exists():
                         # df_c4 = pd.read_json(input_file, lines=True, engine="pyarrow")
                         df_c4 = pd.read_json(input_file, lines=True)
+                        df_c4["lu_name"] = df_c4["lu_name"].str.replace(
+                            r"\s*-\s*", "-", regex=True
+                        )
                         df_c4 = df_c4[df_c4["lu_name"].isin(df["lu_name"].unique())]
                         df_c4["target_widxs"] = df_c4["target_widx"]
                         df_c4["target_widx"] = df_c4["target_widx_head"].apply(
@@ -257,32 +260,20 @@ def main(args):
                             counts["c4_count"] = counts.get("c4", 0)
 
                             # フラグを作成して削除対象を特定
+                            # c4のデータが十分集まったLUはこれ以降追加しない
                             lu_to_remove = counts[
-                                counts["framenet_count"] <= counts["c4_count"]
+                                counts["framenet_count"] * args.c4_rate
+                                <= counts["c4_count"]
                             ].index.tolist()
 
                             # 一括で削除
                             lu_name_list[n] = [
                                 lu for lu in lu_name_list[n] if lu not in lu_to_remove
                             ]
-
-                            # for lu_name in tqdm(lu_name_list[n], leave=False):
-                            #     framenet_count = df[
-                            #         (df[setting] == "test")
-                            #         & (df["lu_name"] == lu_name)
-                            #         & (df["source"] == "framenet")
-                            #     ].shape[0]
-                            #     c4_count = df[
-                            #         (df[setting] == "test")
-                            #         & (df["lu_name"] == lu_name)
-                            #         & (df["source"] == "c4")
-                            #     ].shape[0]
-                            #     # tqdm.write(f"{lu_name}: {framenet_count} , {c4_count}")
-                            #     if framenet_count <= c4_count:
-                            #         lu_name_list[n].remove(lu_name)
                     else:
                         tqdm.write(f"{input_file} is not found.")
 
+        incomplete_lus: list[list[str]] = [[] for _ in range(args.n_splits)]
         for n in tqdm(range(args.n_splits)):
             setting = settings[n]
             for lu_name in tqdm(df[df[setting] == "test"]["lu_name"].unique()):
@@ -296,20 +287,34 @@ def main(args):
                     & (df[setting] == "test")
                     & (df["lu_name"] == lu_name)
                 ].shape[0]
-                if c4_count < framenet_count:
-                    tqdm.write(f"Warning: {lu_name}: {framenet_count} > {c4_count}")
+                if c4_count < framenet_count * args.c4_rate:
+                    tqdm.write(
+                        f"Warning: {lu_name}: {args.c4_rate} * {framenet_count} > {c4_count}"
+                    )
+                    incomplete_lus[n].append(
+                        f"{lu_name}: {args.c4_rate} * {framenet_count} > {c4_count}"
+                    )
                     df = df[~((df[setting] == "test") & (df["lu_name"] == lu_name))]
                 else:
                     remove = df[
                         (df["source"] == "c4")
                         & (df[setting] == "test")
                         & (df["lu_name"] == lu_name)
-                    ].sample(c4_count - framenet_count, random_state=0)
+                    ].sample(c4_count - (framenet_count * args.c4_rate), random_state=0)
                     df = df.drop(remove.index)
+
+        for n in tqdm(range(args.n_splits)):
+            setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
+            output_dir = args.output_dir / str(args.c4_rate) / setting
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            with open(output_dir / "incomplete_lus.txt", "w") as f:
+                for lu in incomplete_lus[n]:
+                    print(lu, file=f)
 
     for n in tqdm(range(args.n_splits)):
         setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
-        output_dir = args.output_dir / setting
+        output_dir = args.output_dir / str(args.c4_rate) / setting
         output_dir.mkdir(parents=True, exist_ok=True)
 
         for split in ["test", "dev", "train"]:
