@@ -11,10 +11,12 @@ add_method=c4first
 # add_method=ratio
 # add_method=sequential
 
+c4_rate=1
+
 uv run python ${source_dir}/make_dataset.py \
     --input_file ${input_dir}/exemplars.jsonl \
     --output_dir ${data_dir}/${add_method} \
     --setting_prefix ${setting_prefix} \
     --n_splits ${n_splits} \
-    --c4_rate 2 \
+    --c4_rate ${c4_rate} \
     --add_method ${add_method}
