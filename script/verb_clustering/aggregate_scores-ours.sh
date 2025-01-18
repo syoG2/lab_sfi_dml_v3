@@ -1,7 +1,8 @@
 #!/bin/bash
 
 source_dir=./source/verb_clustering
-data_dir=./data/verb_clustering
+# data_dir=./data/verb_clustering
+data_dir=./data/verb_clustering/c4_rate_0
 
 settings=(all_3_0 all_3_1 all_3_2)
 
@@ -16,8 +17,8 @@ model_names=(vanilla softmax_classification adacos_classification siamese_distan
 vec_types=(word mask wm)
 # vec_types=(wm)
 
-# clustering_name_methods=(onestep-average twostep-xmeans-average)
-clustering_name_methods=(twostep-xmeans-average)
+clustering_name_methods=(onestep-average twostep-xmeans-average)
+# clustering_name_methods=(twostep-xmeans-average)
 
 split="test"
 

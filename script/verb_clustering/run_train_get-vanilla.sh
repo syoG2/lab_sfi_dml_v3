@@ -1,7 +1,8 @@
 #!/bin/bash
 
 source_dir=./source/verb_clustering
-data_dir=./data/verb_clustering
+# data_dir=./data/verb_clustering
+data_dir=./data/verb_clustering/c4_rate_0/
 
 settings=(all_3_0 all_3_1 all_3_2)
 
@@ -16,7 +17,7 @@ model_name=vanilla
 
 run_numbers=(00)
 
-device=cuda:2
+device=cuda:0
 
 for setting in "${settings[@]}"; do
     for vec_type in "${vec_types[@]}"; do
