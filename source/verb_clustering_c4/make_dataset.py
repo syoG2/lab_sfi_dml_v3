@@ -171,7 +171,9 @@ def main(args):
                         ]
                         df_c4[settings] = "disuse"
 
-                        if args.add_method == "ratio":
+                        if (args.add_method == "ratio") | (
+                            args.add_method == "c4first"
+                        ):
                             for n in tqdm(range(args.n_splits), leave=False):
                                 setting = settings[n]
                                 additional = df_c4[
@@ -242,7 +244,7 @@ def main(args):
                 continue
             break
 
-        if args.add_method == "ratio":
+        if (args.add_method == "ratio") | (args.add_method == "c4first"):
             incomplete_lus: list[list[str]] = [[] for _ in range(args.n_splits)]
             for n in tqdm(range(args.n_splits)):
                 setting = settings[n]
@@ -305,12 +307,27 @@ def main(args):
         output_dir = args.output_dir / str(args.c4_rate) / setting
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        for split in ["test", "dev", "train"]:
-            df_split = df[df[setting] == split]
-            write_jsonl(
-                df_split.to_dict("records"),
-                output_dir / f"exemplars_{split}.jsonl",
-            )
+        if args.add_method == "c4first":
+            for split in ["test_framenet", "test_c4", "dev", "train"]:
+                if split == "test_framenet":
+                    df_split = df[
+                        (df[setting] == "test") & (df["source"] == "framenet")
+                    ]
+                elif split == "test_c4":
+                    df_split = df[(df[setting] == "test") & (df["source"] == "c4")]
+                else:
+                    df_split = df[df[setting] == split]
+                write_jsonl(
+                    df_split.to_dict("records"),
+                    output_dir / f"exemplars_{split}.jsonl",
+                )
+        else:
+            for split in ["test", "dev", "train"]:
+                df_split = df[df[setting] == split]
+                write_jsonl(
+                    df_split.to_dict("records"),
+                    output_dir / f"exemplars_{split}.jsonl",
+                )
 
 
 if __name__ == "__main__":
@@ -321,7 +338,9 @@ if __name__ == "__main__":
     parser.add_argument("--setting_prefix", type=str, default="all")
     parser.add_argument("--n_splits", type=int, default=3)
     parser.add_argument("--c4_rate", type=int, default=0)
-    parser.add_argument("--add_method", type=str, default="sequential")
+    parser.add_argument(
+        "--add_method", type=str, choices=["sequential", "ratio", "c4first"]
+    )
     parser.add_argument("--drop", type=bool, default=False)
     args = parser.parse_args()
     print(args)
