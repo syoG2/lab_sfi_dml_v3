@@ -41,14 +41,22 @@ class FramenetWordList(WordList):
 def get_lu_idx(text: str, text_widx: str, target: list[list[int]]) -> list[list[int]]:
     # 前処理前後でtargetの位置を揃える(文字レベル)
     text_to_text_widx, _ = get_alignments(list(text), list(text_widx))
-    return [[text_to_text_widx[t[0]][0], text_to_text_widx[t[1] - 1][-1] + 1] for t in target]
+    return [
+        [text_to_text_widx[t[0]][0], text_to_text_widx[t[1] - 1][-1] + 1]
+        for t in target
+    ]
 
 
-def get_fe_idx(text: str, text_widx: str, fe: list[list[list[int | str]] | dict]) -> list[list[int]]:
+def get_fe_idx(
+    text: str, text_widx: str, fe: list[list[list[int | str]] | dict]
+) -> list[list[int]]:
     # 前処理前後でfeの位置を揃える(文字レベル)
     text_to_text_widx, text_widx_to_text = get_alignments(list(text), list(text_widx))
     ret: list[list[list[int | str]] | dict] = [[], {}]
-    ret[0] = [[text_to_text_widx[f[0]][0], text_to_text_widx[f[1] - 1][-1] + 1, f[2]] for f in fe[0]]
+    ret[0] = [
+        [text_to_text_widx[f[0]][0], text_to_text_widx[f[1] - 1][-1] + 1, f[2]]
+        for f in fe[0]
+    ]
     ret[1] = fe[1]
     return ret
 
@@ -67,7 +75,9 @@ def make_word_list(id_data: FramenetId, doc: list[list]) -> FramenetWordList:
                     upos=word.upos,
                     xpos=word.xpos,
                     feats=word.feats,
-                    head=len(ret.words) + (word.head - word.id) if word.head != 0 else -1,  # idの変更に合わせる
+                    head=len(ret.words) + (word.head - word.id)
+                    if word.head != 0
+                    else -1,  # idの変更に合わせる
                     deprel=word.deprel,
                     start_char=word.start_char,
                     end_char=word.end_char,
@@ -107,13 +117,21 @@ def get_verb_idx(doc: list[list]) -> int:
 def lu_char_to_word_index(text: str, idx: list[list[int]]) -> list[int]:
     # luを文字単位から単語単位に変換
     char_to_word, _ = get_alignments(list(text), text.split() + [" "])
-    return [[char_to_word[start_end[0]][0], char_to_word[start_end[-1] - 1][-1]] for start_end in idx]
+    return [
+        [char_to_word[start_end[0]][0], char_to_word[start_end[-1] - 1][-1]]
+        for start_end in idx
+    ]
 
 
 def fe_char_to_word_index(text: str, fe_idx: list[list[int]]) -> list[list[int]]:
     # feを文字単位から単語単位に変換
     char_to_word, _ = get_alignments(list(text), text.split() + [" "])
-    ret = [[[char_to_word[fe[0]][0], char_to_word[fe[1] - 1][-1], fe[2]] for fe in fe_idx[0]]]
+    ret = [
+        [
+            [char_to_word[fe[0]][0], char_to_word[fe[1] - 1][-1], fe[2]]
+            for fe in fe_idx[0]
+        ]
+    ]
     ret.append(fe_idx[1])
     return ret
 
@@ -138,7 +156,9 @@ def get_target_widx_head(target_widx: list[list[int]], word_list: FramenetWordLi
     return ret
 
 
-def get_fe_widx_head(fe_widx: list[list[list[int | str]] | dict], word_list: FramenetWordList):
+def get_fe_widx_head(
+    fe_widx: list[list[list[int | str]] | dict], word_list: FramenetWordList
+):
     ret = fe_widx.copy()
     for r in ret[0]:
         r.append(r[0])
@@ -163,17 +183,24 @@ def main(args):
         pos_batch_size=9000,
     )
 
+    # 前処理前のFrameNetのデータを読み込む
     df = pd.read_json(args.input_file, lines=True)
 
-    df = df[df["lu_name"].str.contains(r"\.v")]  # 動詞を抽出
-    df = df[~df["lu_name"].str.contains(r"[\(\)\[\]]")]  # [X]:()や[]が入っている例を除外
+    df = df[df["lu_name"].str.contains(r"\.v")]  # 動詞のLUを抽出
+    df = df[~df["lu_name"].str.contains(r"[\(\)\[\]]")]  # ()や[]が入っている例を除外
     df = df[
-        df["lu_name"].apply(lambda lu_name: len(re.sub(r"(\.v)|(\[.*?\])|(\(.*?\))", "", lu_name).split()))
+        df["lu_name"].apply(
+            lambda lu_name: len(
+                re.sub(r"(\.v)|(\[.*?\])|(\(.*?\))", "", lu_name).split()
+            )
+        )
         == df["target"].apply(lambda target: len(target))
     ]  # LUの単語数とtargetの単語数が一致するものを抽出(アノテーションミスと見られるものを省く)
 
     tqdm.pandas(desc="doc")
-    df["doc"] = df["text"].progress_apply(lambda x: nlp(normalize("NFKC", x)))  # Unicode正規化
+    df["doc"] = df["text"].progress_apply(
+        lambda x: nlp(normalize("NFKC", x))
+    )  # Unicode正規化 + 構文解析
 
     word_lists: list[FramenetWordList] = [
         make_word_list(FramenetId(id=dictionary["id_data"]["id"]), dictionary["doc"])
@@ -187,14 +214,25 @@ def main(args):
     )
 
     tqdm.pandas(desc="preprocessed_lu_idx")
-    df["preprocessed_lu_idx"] = df.progress_apply(lambda row: get_lu_idx(row["text"], row["text_widx"], row["target"]), axis=1)
+    # 前処理後のLUの位置を格納(文字レベル)
+    df["preprocessed_lu_idx"] = df.progress_apply(
+        lambda row: get_lu_idx(row["text"], row["text_widx"], row["target"]), axis=1
+    )
 
     tqdm.pandas(desc="target_widx")
-    df["target_widx"] = df.progress_apply(lambda row: lu_char_to_word_index(row["text_widx"], row["preprocessed_lu_idx"]), axis=1)
+    # 前処理後のLUの位置を格納(単語レベル)
+    df["target_widx"] = df.progress_apply(
+        lambda row: lu_char_to_word_index(row["text_widx"], row["preprocessed_lu_idx"]),
+        axis=1,
+    )
 
     tqdm.pandas(desc="target_widx_head")
+    # 前処理後のLUの内、構文木上で最も根に近い単語の位置を取得
     df.reset_index(drop=True, inplace=True)
-    df["target_widx_head"] = df.progress_apply(lambda row: get_target_widx_head(row["target_widx"], word_lists[row.name]), axis=1)
+    df["target_widx_head"] = df.progress_apply(
+        lambda row: get_target_widx_head(row["target_widx"], word_lists[row.name]),
+        axis=1,
+    )
 
     tqdm.pandas(desc="fe_idx")
     df["fe_idx"] = df.progress_apply(
@@ -202,22 +240,33 @@ def main(args):
     )  # feの位置を単語単位に変換
 
     tqdm.pandas(desc="fe_widx")
-    df["fe_widx"] = df.progress_apply(lambda row: fe_char_to_word_index(row["text_widx"], row["fe_idx"]), axis=1)
+    df["fe_widx"] = df.progress_apply(
+        lambda row: fe_char_to_word_index(row["text_widx"], row["fe_idx"]), axis=1
+    )
 
     tqdm.pandas(desc="fe_widx_head")
     df.reset_index(drop=True, inplace=True)
-    df["fe_widx_head"] = df.progress_apply(lambda row: get_fe_widx_head(row["fe_widx"], word_lists[row.name]), axis=1)
+    df["fe_widx_head"] = df.progress_apply(
+        lambda row: get_fe_widx_head(row["fe_widx"], word_lists[row.name]), axis=1
+    )
 
     tqdm.pandas(desc="verb_idx")
     df["verb_idx"] = df.progress_apply(
         lambda row: 0
         if " " not in row["lu_name"]
-        else get_verb_idx(nlp(re.sub(r"(\.v)|(\[.*?\])|(\(.*?\))", "", row["lu_name"]).strip())),
+        else get_verb_idx(
+            nlp(re.sub(r"(\.v)|(\[.*?\])|(\(.*?\))", "", row["lu_name"]).strip())
+        ),
         axis=1,
     )
 
     tqdm.pandas(desc="verb")
-    df["verb"] = df.progress_apply(lambda row: word_lists[row.name].words[row["target_widx"][row["verb_idx"]][0]].lemma, axis=1)
+    df["verb"] = df.progress_apply(
+        lambda row: word_lists[row.name]
+        .words[row["target_widx"][row["verb_idx"]][0]]
+        .lemma,
+        axis=1,
+    )
 
     tqdm.pandas(desc="featured_word_idx")
     df["featured_word_idx"] = df.progress_apply(
@@ -227,10 +276,13 @@ def main(args):
 
     tqdm.pandas(desc="featured_word")
     df["featured_word"] = df.progress_apply(
-        lambda x: x["text_widx"][x["featured_word_idx"][0] : x["featured_word_idx"][1]], axis=1
+        lambda x: x["text_widx"][x["featured_word_idx"][0] : x["featured_word_idx"][1]],
+        axis=1,
     )  # 注目する単語(動詞)を取得
 
-    df = df.drop_duplicates(subset=["text_widx", "featured_word"])  # 重複を削除
+    # [ ]:duplicatesの是非を確認
+    df["check_duplicates"] = df["target_widx_head"].apply(lambda x: x[2])
+    df = df.drop_duplicates(subset=["text_widx", "check_duplicates"])  # 重複を削除
 
     preprocessed_exemplars: list[FramenetData] = [
         FramenetData(
