@@ -9,6 +9,7 @@ data/
 dump/
 temp/
 analysis/
+pyrightconfig.json
 
 # *.ipynb
 *try*
