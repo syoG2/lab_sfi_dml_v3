@@ -25,7 +25,7 @@ class RawFramenetData(BaseModel):
     ex_idx: UUID = Field(default_factory=lambda: uuid4())
 
 
-def make_exemplars(exemplars: any) -> list[RawFramenetData]:
+def make_exemplars(exemplars) -> list[RawFramenetData]:
     # 前処理前のframenetのデータを作成
     # nltk.corpus.framenet.exemplars()をRawFramenetDataのリストに変換
     ret: list[RawFramenetData] = []
@@ -67,7 +67,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_file", type=Path, default=Path("./data/preprocessing/framenet/collect/exemplars.jsonl"))
+    parser.add_argument(
+        "--output_file",
+        type=Path,
+        default=Path("./data/preprocessing/framenet/collect/exemplars.jsonl"),
+    )
     args = parser.parse_args()
     print(args)
     main(args)
