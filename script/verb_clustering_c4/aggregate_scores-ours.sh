@@ -20,24 +20,29 @@ clustering_name_methods=(onestep-average twostep-xmeans-average)
 # clustering_name_methods=(twostep-xmeans-average)
 
 split="test"
-c4_rate=2
+c4_rates=(0 1 2)
 
-for model_name in "${model_names[@]}"; do
-    for vec_type in "${vec_types[@]}"; do
-        for clustering_name_method in "${clustering_name_methods[@]}"; do
-            d2=${pretrained_model_name}/${model_name}
-            d3=${vec_type}/${clustering_name_method}
+add_methods=(ratio sequential)
+for add_method in "${add_methods[@]}"; do
+    for c4_rate in "${c4_rates[@]}"; do
+        for model_name in "${model_names[@]}"; do
+            for vec_type in "${vec_types[@]}"; do
+                for clustering_name_method in "${clustering_name_methods[@]}"; do
+                    d2=${pretrained_model_name}/${model_name}
+                    d3=${vec_type}/${clustering_name_method}
 
-            input_dirs=()
-            for setting in "${settings[@]}"; do
-                d1=${setting}
-                input_dirs+=("${data_dir}/evaluate_clustering_ours/${c4_rate}/${d1}/${d2}/${d3}")
+                    input_dirs=()
+                    for setting in "${settings[@]}"; do
+                        d1=${setting}
+                        input_dirs+=("${data_dir}/evaluate_clustering_ours/${add_method}/${c4_rate}/${d1}/${d2}/${d3}")
+                    done
+
+                    uv run python ${source_dir}/aggregate_scores.py \
+                        --input_dirs "${input_dirs[@]}" \
+                        --output_dir "${data_dir}/aggregate_scores_clustering/${add_method}/${c4_rate}/${d2}/${d3}" \
+                        --split ${split}
+                done
             done
-
-            uv run python ${source_dir}/aggregate_scores.py \
-                --input_dirs "${input_dirs[@]}" \
-                --output_dir "${data_dir}/aggregate_scores_clustering/${c4_rate}/${d2}/${d3}" \
-                --split ${split}
         done
     done
 done
