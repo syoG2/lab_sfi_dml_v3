@@ -26,9 +26,13 @@ splits=(train dev test)
 # splits=(dev)
 # splits=(test)
 
-device=cuda:0
+device=cuda:3
 
-c4_rate="2"
+c4_rate=2
+
+# add_method=sequential
+add_method=ratio
+
 
 for setting in "${settings[@]}"; do
     for vec_type in "${vec_types[@]}"; do
@@ -37,10 +41,11 @@ for setting in "${settings[@]}"; do
                 d1=${setting}
                 d2=${pretrained_model_name}/${model_name}/${vec_type}/${run_number}
                 uv run python ${source_dir}/get_embedding.py \
-                    --input_file "${data_dir}/dataset/${c4_rate}/${d1}/exemplars_${split}.jsonl" \
-                    --input_params_file "${data_dir}/train_model/${c4_rate}/${d1}/${d2}/params.json" \
-                    --input_model_file "${data_dir}/train_model/${c4_rate}/${d1}/${d2}/pretrained_model_last.pth" \
-                    --output_dir "${data_dir}/embedding/${c4_rate}/${d1}/${d2}"
+                    --input_file "${data_dir}/dataset/${add_method}/${c4_rate}/${d1}/exemplars_${split}.jsonl" \
+                    --input_params_file "${data_dir}/train_model/${d1}/${d2}/params.json" \
+                    --input_model_file "${data_dir}/train_model/${d1}/${d2}/pretrained_model_last.pth" \
+                    --output_dir "${data_dir}/embedding/${add_method}/${c4_rate}/${d1}/${d2}" \
+                    --device ${device}
             done
         done
     done
