@@ -31,9 +31,7 @@ def main(args):
     if args.clustering_name == "onestep":
         clustering = OnestepClustering(args.clustering_method)
     elif args.clustering_name == "twostep":
-        clustering = TwostepClustering(
-            args.clustering_method1, args.clustering_method2
-        )
+        clustering = TwostepClustering(args.clustering_method1, args.clustering_method2)
 
     df_vec, vec_array = read_embedding(
         args.input_dir, "dev", args.vec_type2run_number, args.alpha
@@ -45,6 +43,7 @@ def main(args):
     elif args.clustering_name == "twostep":
         df_clu_dev = clustering.step(df_vec, vec_array, vec_array, params)
 
+    # [ ]:C4のみで先にクラスタリングする場合、splitの部分を変更する
     df_vec, vec_array = read_embedding(
         args.input_dir, "test", args.vec_type2run_number, args.alpha
     )
@@ -57,6 +56,8 @@ def main(args):
         df_clu_dev.to_dict("records"),
         (args.output_dir / "exemplars_dev.jsonl"),
     )
+
+    # [ ]:C4のみで先にクラスタリングする場合、出力ファイルをexemplars_test_c4.jsonlに変更する
     write_jsonl(
         df_clu_test.to_dict("records"),
         (args.output_dir / "exemplars_test.jsonl"),
