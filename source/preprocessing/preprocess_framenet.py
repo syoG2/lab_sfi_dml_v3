@@ -280,7 +280,6 @@ def main(args):
         axis=1,
     )  # 注目する単語(動詞)を取得
 
-    # [ ]:duplicatesの是非を確認
     df["check_duplicates"] = df["target_widx_head"].apply(lambda x: x[2])
     df = df.drop_duplicates(subset=["text_widx", "check_duplicates"])  # 重複を削除
 
