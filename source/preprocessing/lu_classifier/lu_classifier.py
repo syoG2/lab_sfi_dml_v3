@@ -41,93 +41,55 @@ def main(args):
     set_seed(args.seed)
     args.output_model_dir.mkdir(parents=True, exist_ok=True)
 
-    # データの読み込み
-    df = pd.read_json(args.input_file, orient="records", lines=True)
-    df = df[
-        [
-            "featured_word",
-            "text_widx",
-            "preprocessed_lu_idx",
-            "featured_word_idx",
-            "lu_name",
+    if args.mode == "train" or args.mode == "random":
+        df_list = [
+            pd.read_json(
+                args.input_dir / "random" / f"{args.n_splits}_{i}.jsonl", lines=True
+            )
+            for i in range(args.n_splits)
         ]
-    ]
-
-    # # データのシャッフル
-    # df = df.sample(frac=1, random_state=0).reset_index(drop=True)
-    # # データの分割
-    # train_size = int(len(df) * 0.8)
-    # test_size = int(len(df) * 0.1)
-    # # valid_size = int(len(df) * 0.1)
-
-    # 5分割交差検証用にデータを分割する
-    # luの単語数が1のものと2以上のもので比率を合わせたい。
-    # 学習データとテストデータに同じlu_nameが含まれないようにする
-    df_lu_single = df[df["preprocessed_lu_idx"].apply(len) == 1]
-    df_lu_multi = df[df["preprocessed_lu_idx"].apply(len) > 1]
-
-    if args.mode == "crossvalidation_random" or args.mode == "train":
-        df_lu_single = df_lu_single.sample(frac=1, random_state=args.seed).reset_index(drop=True)
-        df_lu_single_list: pd.DataFrame = [pd.DataFrame() for _ in range(args.n_splits)]
-        for i in range(args.n_splits):
-            df_lu_single_list[i] = df_lu_single.iloc[i :: args.n_splits].reset_index(drop=True)
-        df_lu_single_list.sort(key=len)
-
-        df_lu_multi = df_lu_multi.sample(frac=1, random_state=args.seed).reset_index(drop=True)
-        df_lu_multi_list: pd.DataFrame = [pd.DataFrame() for _ in range(args.n_splits)]
-        for i in range(args.n_splits):
-            df_lu_multi_list[i] = df_lu_multi.iloc[i :: args.n_splits].reset_index(drop=True)
-        df_lu_multi_list.sort(key=len, reverse=True)
-    elif args.mode == "crossvalidation_distinct":
-        # "lu_name"でグループ化し、数が少ない順にソート
-        lu_name_single_counts = df_lu_single["lu_name"].value_counts()
-        df_lu_single_list: pd.DataFrame = [pd.DataFrame() for _ in range(args.n_splits)]
-        # ソートされた順にfor文を回す
-        for lu_name in lu_name_single_counts.index:
-            df_lu_single_list.sort(key=len)
-            df_lu_single_list[0] = pd.concat(
-                [
-                    df_lu_single_list[0],
-                    df_lu_single[df_lu_single["lu_name"] == lu_name],
-                ],
-                ignore_index=True,
+    else:
+        df_list = [
+            pd.read_json(
+                args.input_dir / "distinct" / f"{args.n_splits}_{i}.jsonl", lines=True
             )
-        df_lu_single_list.sort(key=len)
-
-        # "lu_name"でグループ化し、数が少ない順にソート
-        lu_name_multi_counts = df_lu_multi["lu_name"].value_counts()
-        df_lu_multi_list: pd.DataFrame = [pd.DataFrame() for _ in range(args.n_splits)]
-        # ソートされた順にfor文を回す
-        for lu_name in lu_name_multi_counts.index:
-            df_lu_multi_list.sort(key=len)
-            df_lu_multi_list[0] = pd.concat(
-                [df_lu_multi_list[0], df_lu_multi[df_lu_multi["lu_name"] == lu_name]],
-                ignore_index=True,
-            )
-        df_lu_multi_list.sort(key=len, reverse=True)
-
-    df_list = [pd.concat([df_lu_single_list[i], df_lu_multi_list[i]], ignore_index=True) for i in range(args.n_splits)]
+            for i in range(args.n_splits)
+        ]
 
     if args.mode == "train":
         # データセットの作成
         train_dataset = Dataset.from_pandas(
             pd.concat(
-                [df_list[(args.part + i) % args.n_splits] for i in range(args.n_splits - 1)],
+                [
+                    df_list[(args.part + i) % args.n_splits]
+                    for i in range(args.n_splits - 1)
+                ],
                 ignore_index=True,
             )
         )
-        validation_dataset = Dataset.from_pandas(df_list[(args.part + args.n_splits - 1) % args.n_splits])
-        dataset = DatasetDict({"train": train_dataset, "validation": validation_dataset})
-    elif args.mode == "crossvalidation_distinct" or args.mode == "crossvalidation_random":
+        validation_dataset = Dataset.from_pandas(
+            df_list[(args.part + args.n_splits - 1) % args.n_splits]
+        )
+        dataset = DatasetDict(
+            {"train": train_dataset, "validation": validation_dataset}
+        )
+    elif args.mode == "distinct" or args.mode == "random":
         # データセットの作成
         train_dataset = Dataset.from_pandas(
             pd.concat(
-                [df_list[(args.part + i) % args.n_splits] for i in range(args.n_splits - 2)],
+                [
+                    df_list[(args.part + i) % args.n_splits]
+                    for i in range(args.n_splits - 2)
+                ],
                 ignore_index=True,
             )
         )
-        test_dataset = Dataset.from_pandas(df_list[(args.part + args.n_splits - 2) % args.n_splits])
-        validation_dataset = Dataset.from_pandas(df_list[(args.part + args.n_splits - 1) % args.n_splits])
+        test_dataset = Dataset.from_pandas(
+            df_list[(args.part + args.n_splits - 2) % args.n_splits]
+        )
+        validation_dataset = Dataset.from_pandas(
+            df_list[(args.part + args.n_splits - 1) % args.n_splits]
+        )
         dataset = DatasetDict(
             {
                 "train": train_dataset,
@@ -136,12 +98,16 @@ def main(args):
             }
         )
 
-    model = AutoModelForTokenClassification.from_pretrained(args.pretrained_model, label2id=label2id, id2label=id2label)
+    model = AutoModelForTokenClassification.from_pretrained(
+        args.pretrained_model, label2id=label2id, id2label=id2label
+    )
     # トークナイザーとモデルの準備
     tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model)
     if args.text_input_style == "token0" or args.text_input_style == "token00":
         # カスタムトークン[unused0]を追加
-        tokenizer.add_special_tokens({"additional_special_tokens": [tokenizer.convert_ids_to_tokens(1)]})
+        tokenizer.add_special_tokens(
+            {"additional_special_tokens": [tokenizer.convert_ids_to_tokens(1)]}
+        )
         # モデルのエンベディング層をリサイズ
         model.resize_token_embeddings(len(tokenizer))
 
@@ -224,7 +190,9 @@ def main(args):
         predictions = run_prediction(validation_dataloader, model)
 
         # 固有表現を抽出する
-        results = extract_entities(predictions, dataset["validation"], tokenizer, id2label)
+        results = extract_entities(
+            predictions, dataset["validation"], tokenizer, id2label
+        )
 
         # 正解データと予測データのラベルのlistを作成する
         true_labels, pred_labels = convert_results_to_labels(results)
@@ -240,9 +208,11 @@ def main(args):
 
     # 保存したトークナイザーとモデルを読み込む
     tokenizer = AutoTokenizer.from_pretrained(args.output_model_dir / "tokenizer")
-    best_model = AutoModelForTokenClassification.from_pretrained(args.output_model_dir / "best_model")
+    best_model = AutoModelForTokenClassification.from_pretrained(
+        args.output_model_dir / "best_model"
+    )
 
-    if args.mode == "crossvalidation_distinct" or args.mode == "crossvalidation_random":
+    if args.mode == "distinct" or args.mode == "random":
         test_dataset = dataset["test"].map(
             preprocess_data,
             fn_kwargs={
@@ -282,7 +252,10 @@ def main(args):
 
             is_sep = False
             for i in range(len(result["preprocessed_lu_idx"]) - 1):
-                if result["preprocessed_lu_idx"][i][-1] + 1 != result["preprocessed_lu_idx"][i + 1][0]:
+                if (
+                    result["preprocessed_lu_idx"][i][-1] + 1
+                    != result["preprocessed_lu_idx"][i + 1][0]
+                ):
                     is_sep = True
                     break
 
@@ -297,7 +270,9 @@ def main(args):
                 acc=value["correct"] / value["size"],
                 correct=value["correct"],
                 size=value["size"],
-                sep_acc=value["sep_correct"] / value["sep_size"] if value["sep_size"] != 0 else -1,
+                sep_acc=value["sep_correct"] / value["sep_size"]
+                if value["sep_size"] != 0
+                else -1,
                 sep_correct=value["sep_correct"],
                 sep_size=value["sep_size"],
             )
@@ -311,13 +286,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--part", type=int, required=True)  # 分割交差検証用のパラメータ(0~n_splits-1)
-    parser.add_argument("--n_splits", type=int, default=5)  # 分割数
     parser.add_argument(
-        "--input_file",
-        type=Path,
-        default=Path("./data/preprocessing/framenet/preprocess/exemplars.jsonl"),
-    )
+        "--part", type=int, required=True
+    )  # 分割交差検証用のパラメータ(0~n_splits-1)
+    parser.add_argument("--n_splits", type=int, default=5)  # 分割数
+    parser.add_argument("--input_dir", type=Path, required=True)
     parser.add_argument("--output_model_dir", type=Path, required=True)
     parser.add_argument("--pretrained_model", type=str, default="bert-base-uncased")
     parser.add_argument("--device", type=str, default="cuda:0")
@@ -325,7 +298,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mode",
         type=str,
-        choices=["crossvalidation_distinct", "crossvalidation_random", "train"],
+        choices=["distinct", "random", "train"],
         required=False,
     )
     parser.add_argument(
