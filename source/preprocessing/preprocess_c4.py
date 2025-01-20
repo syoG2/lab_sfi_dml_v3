@@ -21,7 +21,11 @@ from spacy_alignments import get_alignments
 from timeout_decorator import TimeoutError, timeout
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoModelForTokenClassification, AutoTokenizer, DataCollatorForTokenClassification
+from transformers import (
+    AutoModelForTokenClassification,
+    AutoTokenizer,
+    DataCollatorForTokenClassification,
+)
 
 # tqdmをpandasのapplyメソッドで使用できるように設定
 tqdm.pandas()
@@ -36,7 +40,9 @@ def get_pred_lu_name(text_widx, doc_sentence, pred_lu_idx):
             [
                 doc_sentence.words[i].lemma
                 for idx in pred_lu_idx
-                for i in range(char_to_word[idx[0]][0], char_to_word[idx[-1] - 1][-1] + 1)
+                for i in range(
+                    char_to_word[idx[0]][0], char_to_word[idx[-1] - 1][-1] + 1
+                )
             ]
         )
         + ".v"
@@ -46,7 +52,11 @@ def get_pred_lu_name(text_widx, doc_sentence, pred_lu_idx):
 def get_featured_word_idxs(text_widx, doc_sentence):
     doc_words = [word.text for word in doc_sentence.words]
     _, doc_to_char = get_alignments(list(text_widx), doc_words)
-    return [[doc_to_char[word.id - 1][0], doc_to_char[word.id - 1][-1] + 1] for word in doc_sentence.words if word.upos == "VERB"]
+    return [
+        [doc_to_char[word.id - 1][0], doc_to_char[word.id - 1][-1] + 1]
+        for word in doc_sentence.words
+        if word.upos == "VERB"
+    ]
 
 
 class C4Data(BaseData):
@@ -64,7 +74,9 @@ class C4WordList(WordList):
     # words: list[WordInfo]
 
 
-def make_word_list(id_data: C4Id, doc_sentence: list[list], sequence_number: int) -> WordList:
+def make_word_list(
+    id_data: C4Id, doc_sentence: list[list], sequence_number: int
+) -> WordList:
     # 構文解析の結果を整理して返す
     ret: C4WordList = C4WordList(id_data=id_data, words=[])
     root_id = -1
@@ -77,7 +89,9 @@ def make_word_list(id_data: C4Id, doc_sentence: list[list], sequence_number: int
                 upos=word.upos,
                 xpos=word.xpos,
                 feats=word.feats,
-                head=len(ret.words) + (word.head - word.id) if word.head != 0 else -1,  # idの変更に合わせる
+                head=len(ret.words) + (word.head - word.id)
+                if word.head != 0
+                else -1,  # idの変更に合わせる
                 deprel=word.deprel,
                 start_char=word.start_char,
                 end_char=word.end_char,
@@ -110,7 +124,10 @@ def nlp_with_timeout(nlp, text):  # nlp(text)のタイムアウトを設定
 
 def get_doc_sentence(nlp: stanza.Pipeline, text: str) -> list:
     try:
-        return [(seq_id, sentence) for seq_id, sentence in enumerate(nlp_with_timeout(nlp, text).sentences)]
+        return [
+            (seq_id, sentence)
+            for seq_id, sentence in enumerate(nlp_with_timeout(nlp, text).sentences)
+        ]
     except TimeoutError:
         return []
 
@@ -118,7 +135,10 @@ def get_doc_sentence(nlp: stanza.Pipeline, text: str) -> list:
 def lu_char_to_word_index(text: str, idx: list[list[int]]) -> list[int]:
     # luを文字単位から単語単位に変換
     char_to_word, _ = get_alignments(list(text), text.split() + [" "])
-    return [[char_to_word[start_end[0]][0], char_to_word[start_end[-1] - 1][-1]] for start_end in idx]
+    return [
+        [char_to_word[start_end[0]][0], char_to_word[start_end[-1] - 1][-1]]
+        for start_end in idx
+    ]
 
 
 def get_target_widx_head(target_widx: list[list[int]], word_list: C4WordList):
@@ -155,7 +175,7 @@ def get_verb_idx(doc: list[list]) -> int:
 def main(args):
     # outputディレクトリの作成
     args.output_exemplar_dir.mkdir(parents=True, exist_ok=True)
-    args.output_wordlist_file.parent.mkdir(parents=True, exist_ok=True)
+    args.output_wordlist_dir.mkdir(parents=True, exist_ok=True)
 
     nlp = stanza.Pipeline(
         "en",
@@ -174,10 +194,14 @@ def main(args):
     df = df[args.part_id * 1000 : min((args.part_id + 1) * 1000, len(df))]
 
     tqdm.pandas(desc="normalize_text")
-    df["normalize_text"] = df["text"].progress_apply(lambda x: normalize("NFKC", x))  # Unicode正規化
+    df["normalize_text"] = df["text"].progress_apply(
+        lambda x: normalize("NFKC", x)
+    )  # Unicode正規化
 
     tqdm.pandas(desc="doc_sentence")
-    df["doc_sentence"] = df["normalize_text"].progress_apply(lambda x: get_doc_sentence(nlp, x))
+    df["doc_sentence"] = df["normalize_text"].progress_apply(
+        lambda x: get_doc_sentence(nlp, x)
+    )
     df = df[df["doc_sentence"].apply(len) != 0]
 
     df = df.explode("doc_sentence", True)
@@ -185,7 +209,9 @@ def main(args):
     df["sequence_number"] = df["doc_sentence"].apply(lambda x: x[0])
     df["doc_sentence"] = df["doc_sentence"].apply(lambda x: x[1])
 
-    df["text"] = df["doc_sentence"].apply(lambda x: x.text)  # 前処理前のtextを1文ごとにする
+    df["text"] = df["doc_sentence"].apply(
+        lambda x: x.text
+    )  # 前処理前のtextを1文ごとにする
 
     tqdm.pandas(desc="text_widx")
     df["text_widx"] = df["doc_sentence"].progress_apply(
@@ -195,28 +221,50 @@ def main(args):
 
     tqdm.pandas(desc="token_length")
     if args.text_input_style == "sep":
-        df = df[df["text_widx"].progress_apply(lambda x: len(tokenizer(x)["input_ids"]) <= tokenizer.model_max_length)]
+        df = df[
+            df["text_widx"].progress_apply(
+                lambda x: len(tokenizer(x)["input_ids"]) <= tokenizer.model_max_length
+            )
+        ]
         preprocess_data = preprocess_data_sep
     elif args.text_input_style == "token0":
-        df = df[df["text_widx"].progress_apply(lambda x: len(tokenizer(x)["input_ids"]) + 1 <= tokenizer.model_max_length)]
+        df = df[
+            df["text_widx"].progress_apply(
+                lambda x: len(tokenizer(x)["input_ids"]) + 1
+                <= tokenizer.model_max_length
+            )
+        ]
         preprocess_data = preprocess_data_token0
     elif args.text_input_style == "token00":
         preprocess_data = preprocess_data_token00
-        df = df[df["text_widx"].progress_apply(lambda x: len(tokenizer(x)["input_ids"]) + 2 <= tokenizer.model_max_length)]
+        df = df[
+            df["text_widx"].progress_apply(
+                lambda x: len(tokenizer(x)["input_ids"]) + 2
+                <= tokenizer.model_max_length
+            )
+        ]
 
     tqdm.pandas(desc="featured_word_idx")
-    df["featured_word_idx"] = df.progress_apply(lambda row: get_featured_word_idxs(row["text_widx"], row["doc_sentence"]), axis=1)
+    df["featured_word_idx"] = df.progress_apply(
+        lambda row: get_featured_word_idxs(row["text_widx"], row["doc_sentence"]),
+        axis=1,
+    )
     df = df.explode("featured_word_idx", True)
     df = df.dropna(subset=["featured_word_idx"])
 
     tqdm.pandas(desc="featured_word")
     df["featured_word"] = df.progress_apply(
-        lambda row: row["text_widx"][row["featured_word_idx"][0] : row["featured_word_idx"][-1]], axis=1
+        lambda row: row["text_widx"][
+            row["featured_word_idx"][0] : row["featured_word_idx"][-1]
+        ],
+        axis=1,
     )
     # df = df.dropna(subset=["featured_word"])
     # df["preprocessed_target_widx"] = [[0, 0] for _ in range(len(df))]
 
-    dataset = Dataset.from_pandas(df[["featured_word", "text_widx", "featured_word_idx"]])
+    dataset = Dataset.from_pandas(
+        df[["featured_word", "text_widx", "featured_word_idx"]]
+    )
     preprocessed_dataset = dataset.map(
         preprocess_data,
         fn_kwargs={"tokenizer": tokenizer, "label2id": label2id, "prediction": True},
@@ -236,7 +284,9 @@ def main(args):
 
     tqdm.pandas(desc="pred_lu_name")
     df["pred_lu_name"] = df.progress_apply(
-        lambda row: get_pred_lu_name(row["text_widx"], row["doc_sentence"], row["pred_lu_idx"]),
+        lambda row: get_pred_lu_name(
+            row["text_widx"], row["doc_sentence"], row["pred_lu_idx"]
+        ),
         axis=1,
     )
     df = df[df["pred_lu_name"].apply(lambda x: len(x) > 0)]
@@ -244,40 +294,49 @@ def main(args):
     df["pred_lu_name"] = df["pred_lu_name"].str.lower()
 
     preprocessed_word_lists: list[C4WordList] = [
-        make_word_list(C4Id(**row["id_data"]), row["doc_sentence"], row["sequence_number"]) for _, row in df.iterrows()
+        make_word_list(
+            C4Id(**row["id_data"]), row["doc_sentence"], row["sequence_number"]
+        )
+        for _, row in df.iterrows()
     ]
 
     tqdm.pandas(desc="target_widx")
-    df["target_widx"] = df.progress_apply(lambda row: lu_char_to_word_index(row["text_widx"], row["pred_lu_idx"]), axis=1)
+    df["target_widx"] = df.progress_apply(
+        lambda row: lu_char_to_word_index(row["text_widx"], row["pred_lu_idx"]), axis=1
+    )
 
     tqdm.pandas(desc="target_widx_head")
     df.reset_index(drop=True, inplace=True)
     df["target_widx_head"] = df.progress_apply(
-        lambda row: get_target_widx_head(row["target_widx"], preprocessed_word_lists[row.name]), axis=1
+        lambda row: get_target_widx_head(
+            row["target_widx"], preprocessed_word_lists[row.name]
+        ),
+        axis=1,
     )
 
     tqdm.pandas(desc="verb_idx")
     df["verb_idx"] = df.progress_apply(
         lambda row: 0
         if " " not in row["pred_lu_name"]
-        else get_verb_idx(nlp(re.sub(r"(\.v)|(\[.*?\])|(\(.*?\))", "", row["pred_lu_name"]).strip())),
+        else get_verb_idx(
+            nlp(re.sub(r"(\.v)|(\[.*?\])|(\(.*?\))", "", row["pred_lu_name"]).strip())
+        ),
         axis=1,
     )
 
     tqdm.pandas(desc="verb")
     df["verb"] = df.progress_apply(
-        lambda row: preprocessed_word_lists[row.name].words[row["target_widx"][row["verb_idx"]][0]].lemma
+        lambda row: preprocessed_word_lists[row.name]
+        .words[row["target_widx"][row["verb_idx"]][0]]
+        .lemma
         if len(row["target_widx"]) > row["verb_idx"]
-        and len(preprocessed_word_lists[row.name].words) > row["target_widx"][row["verb_idx"]][0]
+        and len(preprocessed_word_lists[row.name].words)
+        > row["target_widx"][row["verb_idx"]][0]
         else "",
         axis=1,
     )
     df = df[df["verb"] != ""]
-    # [X]:lu_nameの頭文字がa~zで分けてファイル出力する
     df.sort_values(by="pred_lu_name", inplace=True)
-    # for char in range(ord("a"), ord("z") + 1):
-    # (args.output_exemplar_dir / chr(char)).mkdir(parents=True, exist_ok=True)
-    # df_filtered = df[df["pred_lu_name"].str.startswith(chr(char))]
 
     preprocessed_exemplars: list[C4Data] = [
         C4Data(
@@ -307,7 +366,7 @@ def main(args):
 
     # df = df.drop_duplicates(subset=["text_widx"])  # 重複を削除
 
-    with open(args.output_wordlist_file, "w") as f:
+    with open(args.output_wordlist_dir / f"word_list_{args.part_id}.jsonl", "w") as f:
         with tqdm(preprocessed_word_lists) as pbar:
             pbar.set_description("[write word_list]")
             for word_list in pbar:
@@ -319,9 +378,11 @@ if __name__ == "__main__":
     parser.add_argument("--input_file", type=Path, required=True)
     parser.add_argument("--file_id", type=int, required=True)
     parser.add_argument("--part_id", type=int, required=True)
-    parser.add_argument("--split_name", type=str, choices=["train", "validation"], required=False)
+    parser.add_argument(
+        "--split_name", type=str, choices=["train", "validation"], required=False
+    )
     parser.add_argument("--output_exemplar_dir", type=Path, required=True)
-    parser.add_argument("--output_wordlist_file", type=Path, required=True)
+    parser.add_argument("--output_wordlist_dir", type=Path, required=True)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--model_path", type=Path, required=True)
     parser.add_argument("--tokenizer_path", type=Path, required=True)
