@@ -13,15 +13,15 @@ pretrained_model_name=bert-base-uncased
 
 # model_names=(vanilla softmax_classification adacos_classification)
 model_names=(adacos_classification)
-# model_names=(softmax_classification)
-# model_names=(vanilla)
+model_names=(softmax_classification)
+model_names=(vanilla)
+run_numbers=(00)
 
 # model_names=(siamese_distance triplet_distance arcface_classification)
-# model_names=(arcface_classification)
-# model_names=(siamese_distance)
-model_names=(triplet_distance)
+model_names=(arcface_classification)
+model_names=(siamese_distance)
+# model_names=(triplet_distance)
 run_numbers=(00 01 02 03)
-# run_numbers=(03)
 
 vec_types=(mask wm word)
 # vec_types=(mask)
@@ -33,8 +33,8 @@ clustering_method=average
 
 c4_rate=2
 
-# add_method=ratio
-add_method=sequential
+add_method=ratio
+# add_method=sequential
 
 for setting in "${settings[@]}"; do
     for model_name in "${model_names[@]}"; do

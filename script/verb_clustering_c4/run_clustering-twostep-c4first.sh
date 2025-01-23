@@ -12,14 +12,14 @@ pretrained_model_name=bert-base-uncased
 # pretrained_model_name=roberta-large
 
 # model_names=(vanilla softmax_classification adacos_classification)
-# model_names=(vanilla)
-# model_names=(softmax_classification)
-# model_names=(adacos_classification)
-# run_numbers=(00)
+model_names=(adacos_classification)
+model_names=(softmax_classification)
+model_names=(vanilla)
+run_numbers=(00)
 
-# model_names=(siamese_distance triplet_distance arcface_classification)
-# model_names=(arcface_classification)
-# model_names=(siamese_distance)
+# model_names=(arcface_classification siamese_distance triplet_distance)
+model_names=(arcface_classification)
+model_names=(siamese_distance)
 model_names=(triplet_distance)
 run_numbers=(00 01 02 03)
 
@@ -28,14 +28,14 @@ vec_types=(mask wm word)
 # vec_types=(wm)
 # vec_types=(word)
 
-clustering_name=twostep
+# clustering_name=twostep
+clustering_name=twostep_lu
 clustering_method1=xmeans
 clustering_method2=average
 
-c4_rate=2
+c4_rate=1
 
-# add_method=ratio
-add_method=sequential
+add_method=c4first
 
 for setting in "${settings[@]}"; do
     for model_name in "${model_names[@]}"; do
@@ -59,9 +59,15 @@ for setting in "${settings[@]}"; do
                 --input_params_file "${data_dir}/best_params_clustering/${add_method}/${c4_rate}/${d1}/${d2}/best_params.json" \
                 --clustering_name ${clustering_name} \
                 --clustering_method1 ${clustering_method1} \
-                --clustering_method2 ${clustering_method2}
+                --clustering_method2 ${clustering_method2} \
+                --c4first true
 
             # [ ]:C4でクラスタリングしたものにFrameNetの用例を割り当てるスクリプトを作成
+            uv run python ${source_dir}/nearest_neighbor.py \
+                --input_embedding_dir "${data_dir}/embedding/${add_method}/${c4_rate}/${d1}" \
+                --input_clustering_dir "${data_dir}/clustering/${add_method}/${c4_rate}/${d1}/${d2}" \
+                --output_dir "${data_dir}/clustering/${add_method}/${c4_rate}/${d1}/${d2}" \
+                --input_params_file "${data_dir}/best_params_clustering/${add_method}/${c4_rate}/${d1}/${d2}/best_params.json"
 
             splits=(dev test)
             for split in "${splits[@]}"; do

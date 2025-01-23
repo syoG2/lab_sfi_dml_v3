@@ -31,9 +31,7 @@ def main(args):
     if args.clustering_name == "onestep":
         clustering = OnestepClustering(args.clustering_method)
     elif args.clustering_name == "twostep":
-        clustering = TwostepClustering(
-            args.clustering_method1, args.clustering_method2
-        )
+        clustering = TwostepClustering(args.clustering_method1, args.clustering_method2)
 
     df_vec, vec_array = read_embedding(
         args.input_dir, "dev", args.vec_type2run_number, args.alpha

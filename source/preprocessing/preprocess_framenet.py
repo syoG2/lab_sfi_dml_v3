@@ -170,6 +170,22 @@ def get_fe_widx_head(
     return ret
 
 
+def make_verb(lu_name, nlp):
+    verb = re.sub("[\[|\(].+[\)|\]]", "", lu_name)[:-2].strip()
+    if not re.fullmatch("[a-z][a-z-]*", verb):
+        doc = nlp(verb)
+        head = [
+            word.id - 1
+            for sentences in doc.sentences
+            for word in sentences.words
+            if word.deprel == "root"
+        ][0]
+        verb = [word.text for sentences in doc.sentences for word in sentences.words][
+            head
+        ]
+    return verb
+
+
 def main(args):
     # outputディレクトリの作成
     args.output_exemplar_file.parent.mkdir(parents=True, exist_ok=True)
@@ -261,12 +277,17 @@ def main(args):
     )
 
     tqdm.pandas(desc="verb")
-    df["verb"] = df.progress_apply(
-        lambda row: word_lists[row.name]
-        .words[row["target_widx"][row["verb_idx"]][0]]
-        .lemma,
-        axis=1,
-    )
+    if args.verb_form == "original":
+        df["verb"] = df.progress_apply(
+            lambda row: make_verb(row["lu_name"], nlp), axis=1
+        )
+    elif args.verb_form == "lemma":
+        df["verb"] = df.progress_apply(
+            lambda row: word_lists[row.name]
+            .words[row["target_widx"][row["verb_idx"]][0]]
+            .lemma,
+            axis=1,
+        )
 
     tqdm.pandas(desc="featured_word_idx")
     df["featured_word_idx"] = df.progress_apply(
@@ -339,6 +360,9 @@ if __name__ == "__main__":
         "--output_wordlist_file",
         type=Path,
         default=Path("./data/preprocessing/framenet/preprocessing/word_list.jsonl"),
+    )
+    parser.add_argument(
+        "--verb_form", type=str, choices=["lemma", "original"], default="original"
     )
     parser.add_argument("--device", type=str, default="cuda:0")
     args = parser.parse_args()

@@ -132,6 +132,9 @@ def main(args):
         lu_name_list = [
             list(df[df[setting] == "test"]["lu_name"].unique()) for setting in settings
         ]
+        verb_list = [
+            list(df[df[setting] == "test"]["verb"].unique()) for setting in settings
+        ]
         file_id_list = [0, 1, 2, 3, 4, 5]
         part_id_list = list(range(350))
         split_name_list = ["train"]
@@ -212,7 +215,47 @@ def main(args):
                                     for lu in lu_name_list[n]
                                     if lu not in lu_to_remove
                                 ]
-                        else:
+                        elif (args.add_method == "ratio_verb") | (
+                            args.add_method == "c4first_verb"
+                        ):
+                            for n in tqdm(range(args.n_splits), leave=False):
+                                setting = settings[n]
+                                additional = df_c4[df_c4["verb"].isin(verb_list[n])]
+                                additional.loc[:, setting] = "test"
+                                df = pd.concat([df, additional], ignore_index=True)
+
+                                # 必要なデータのみをフィルタリング
+                                test_df = df[
+                                    (df[setting] == "test")
+                                    & df["verb"].isin(verb_list[n])
+                                ]
+
+                                # グループ化してカウントを取得
+                                counts = (
+                                    test_df.groupby(["verb", "source"])
+                                    .size()
+                                    .unstack(fill_value=0)
+                                )
+
+                                # framenet_count と c4_count を取得
+                                counts["framenet_count"] = counts.get("framenet", 0)
+                                counts["c4_count"] = counts.get("c4", 0)
+
+                                # フラグを作成して削除対象を特定
+                                # c4のデータが十分集まったLUはこれ以降追加しない
+                                verb_to_remove = counts[
+                                    counts["framenet_count"] * args.c4_rate
+                                    <= counts["c4_count"]
+                                ].index.tolist()
+
+                                # 一括で削除
+                                verb_list[n] = [
+                                    lu
+                                    for lu in verb_list[n]
+                                    if lu not in verb_to_remove
+                                ]
+
+                        elif args.add_method == "sequential":
                             ok = True
                             for n in tqdm(range(args.n_splits), leave=False):
                                 setting = settings[n]
@@ -230,6 +273,27 @@ def main(args):
                                     additional = df_c4[
                                         df_c4["lu_name"].isin(lu_name_list[n])
                                     ]
+                                    additional.loc[:, setting] = "test"
+                                    df = pd.concat([df, additional], ignore_index=True)
+                                    ok = False
+                            if ok:
+                                break
+                        elif args.add_method == "sequential_verb":
+                            ok = True
+                            for n in tqdm(range(args.n_splits), leave=False):
+                                setting = settings[n]
+                                framenet_count = len(
+                                    df[
+                                        (df[setting] == "test")
+                                        & (df["source"] == "framenet")
+                                    ]
+                                )
+                                c4_count = len(
+                                    df[(df[setting] == "test") & (df["source"] == "c4")]
+                                )
+                                # tqdm.write(f"{n}, {framenet_count}, {c4_count}")
+                                if framenet_count * args.c4_rate > c4_count:
+                                    additional = df_c4[df_c4["verb"].isin(verb_list[n])]
                                     additional.loc[:, setting] = "test"
                                     df = pd.concat([df, additional], ignore_index=True)
                                     ok = False
@@ -285,7 +349,64 @@ def main(args):
                 with open(output_dir / "incomplete_lus.txt", "w") as f:
                     for lu in incomplete_lus[n]:
                         print(lu, file=f)
-        else:
+        elif (args.add_method == "ratio_verb") | (args.add_method == "c4first_verb"):
+            incomplete_verbs: list[list[str]] = [[] for _ in range(args.n_splits)]
+            for n in tqdm(range(args.n_splits)):
+                setting = settings[n]
+                for verb in tqdm(df[df[setting] == "test"]["verb"].unique()):
+                    framenet_count = df[
+                        (df["source"] == "framenet")
+                        & (df[setting] == "test")
+                        & (df["verb"] == verb)
+                    ].shape[0]
+                    c4_count = df[
+                        (df["source"] == "c4")
+                        & (df[setting] == "test")
+                        & (df["verb"] == verb)
+                    ].shape[0]
+                    if c4_count < framenet_count * args.c4_rate:
+                        tqdm.write(
+                            f"Warning: {verb}: {args.c4_rate} * {framenet_count} > {c4_count}"
+                        )
+                        incomplete_verbs[n].append(
+                            f"{verb}: {args.c4_rate} * {framenet_count} > {c4_count}"
+                        )
+                        if args.drop:
+                            df[((df[setting] == "test") & (df["verb"] == verb))][
+                                setting
+                            ] = "disuse"
+                    else:
+                        remove = df[
+                            (df["source"] == "c4")
+                            & (df[setting] == "test")
+                            & (df["verb"] == verb)
+                        ].tail(c4_count - (framenet_count * args.c4_rate))
+                        df = df.drop(remove.index)
+            for n in tqdm(range(args.n_splits)):
+                setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
+                output_dir = args.output_dir / str(args.c4_rate) / setting
+                output_dir.mkdir(parents=True, exist_ok=True)
+
+                with open(output_dir / "incomplete_lus.txt", "w") as f:
+                    for verb in incomplete_verbs[n]:
+                        print(verb, file=f)
+        elif args.add_method == "sequential":
+            for n in tqdm(range(args.n_splits)):
+                setting = settings[n]
+                framenet_count = len(
+                    df[(df[setting] == "test") & (df["source"] == "framenet")]
+                )
+                c4_count = len(df[(df[setting] == "test") & (df["source"] == "c4")])
+                if framenet_count * args.c4_rate > c4_count:
+                    tqdm.write(
+                        f"Warning: {setting}: {args.c4_rate} * {framenet_count} > {c4_count}"
+                    )
+                else:
+                    remove = df[(df["source"] == "c4") & (df[setting] == "test")].tail(
+                        c4_count - (framenet_count * args.c4_rate)
+                    )
+                    df = df.drop(remove.index)
+        elif args.add_method == "sequential_verb":
             for n in tqdm(range(args.n_splits)):
                 setting = settings[n]
                 framenet_count = len(
@@ -308,12 +429,12 @@ def main(args):
         output_dir.mkdir(parents=True, exist_ok=True)
 
         if args.add_method == "c4first":
-            for split in ["test_framenet", "test_c4", "dev", "train"]:
-                if split == "test_framenet":
+            for split in ["test-framenet", "test-c4", "dev", "train"]:
+                if split == "test-framenet":
                     df_split = df[
                         (df[setting] == "test") & (df["source"] == "framenet")
                     ]
-                elif split == "test_c4":
+                elif split == "test-c4":
                     df_split = df[(df[setting] == "test") & (df["source"] == "c4")]
                 else:
                     df_split = df[df[setting] == split]
@@ -339,7 +460,16 @@ if __name__ == "__main__":
     parser.add_argument("--n_splits", type=int, default=3)
     parser.add_argument("--c4_rate", type=int, default=0)
     parser.add_argument(
-        "--add_method", type=str, choices=["sequential", "ratio", "c4first"]
+        "--add_method",
+        type=str,
+        choices=[
+            "sequential",
+            "ratio",
+            "c4first",
+            "ratio_verb",
+            "sequential_verb",
+            "c4first_verb",
+        ],
     )
     parser.add_argument("--drop", type=bool, default=False)
     args = parser.parse_args()

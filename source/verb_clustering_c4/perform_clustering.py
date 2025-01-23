@@ -3,6 +3,7 @@ from pathlib import Path
 
 from sfidml.f_induc.clustering_onestep import OnestepClustering
 from sfidml.f_induc.clustering_twostep import TwostepClustering
+from sfidml.f_induc.clustering_twostep_lu import TwostepClusteringLU
 from sfidml.f_induc.embedding import read_embedding
 from sfidml.utils.data_utils import read_json, write_json, write_jsonl
 from sfidml.utils.model_utils import fix_seed
@@ -32,6 +33,10 @@ def main(args):
         clustering = OnestepClustering(args.clustering_method)
     elif args.clustering_name == "twostep":
         clustering = TwostepClustering(args.clustering_method1, args.clustering_method2)
+    elif args.clustering_name == "twostep_lu":
+        clustering = TwostepClusteringLU(
+            args.clustering_method1, args.clustering_method2
+        )
 
     df_vec, vec_array = read_embedding(
         args.input_dir, "dev", args.vec_type2run_number, args.alpha
@@ -42,14 +47,24 @@ def main(args):
         df_clu_dev = clustering.step(df_vec, vec_array, params)
     elif args.clustering_name == "twostep":
         df_clu_dev = clustering.step(df_vec, vec_array, vec_array, params)
+    elif args.clustering_name == "twostep_lu":
+        df_clu_dev = clustering.step(df_vec, vec_array, vec_array, params)
 
     # [ ]:C4のみで先にクラスタリングする場合、splitの部分を変更する
-    df_vec, vec_array = read_embedding(
-        args.input_dir, "test", args.vec_type2run_number, args.alpha
-    )
+    if args.c4first:
+        df_vec, vec_array = read_embedding(
+            args.input_dir, "test-c4", args.vec_type2run_number, args.alpha
+        )
+    else:
+        df_vec, vec_array = read_embedding(
+            args.input_dir, "test", args.vec_type2run_number, args.alpha
+        )
+
     if args.clustering_name == "onestep":
         df_clu_test = clustering.step(df_vec, vec_array, params)
     elif args.clustering_name == "twostep":
+        df_clu_test = clustering.step(df_vec, vec_array, vec_array, params)
+    elif args.clustering_name == "twostep_lu":
         df_clu_test = clustering.step(df_vec, vec_array, vec_array, params)
 
     write_jsonl(
@@ -57,11 +72,17 @@ def main(args):
         (args.output_dir / "exemplars_dev.jsonl"),
     )
 
-    # [ ]:C4のみで先にクラスタリングする場合、出力ファイルをexemplars_test_c4.jsonlに変更する
-    write_jsonl(
-        df_clu_test.to_dict("records"),
-        (args.output_dir / "exemplars_test.jsonl"),
-    )
+    # [ ]:C4のみで先にクラスタリングする場合、出力ファイルをexemplars_test-c4.jsonlに変更する
+    if args.c4first:
+        write_jsonl(
+            df_clu_test.to_dict("records"),
+            (args.output_dir / "exemplars_test-c4.jsonl"),
+        )
+    else:
+        write_jsonl(
+            df_clu_test.to_dict("records"),
+            (args.output_dir / "exemplars_test.jsonl"),
+        )
     write_json(vars(args), args.output_dir / "params.json")
 
 
@@ -73,7 +94,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--clustering_name",
         type=str,
-        choices=["onestep", "twostep"],
+        choices=["onestep", "twostep", "twostep_lu"],
         required=True,
     )
 
@@ -100,6 +121,7 @@ if __name__ == "__main__":
         choices=["average", "ward"],
         required=False,
     )
+    parser.add_argument("--c4first", type=bool, default=False)
     args = parser.parse_args()
     print(args)
     main(args)

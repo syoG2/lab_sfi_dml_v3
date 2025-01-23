@@ -25,6 +25,20 @@ def main(args: Namespace) -> None:
                 "n_true_lus": len(set(df["verb_frame"])),
             }
         )
+    elif params["clustering_name"] == "twostep_lu":
+        # [ ]:LUを元に2段階クラスタリングした場合の評価値として適切か確認する
+        metrics.update(
+            {
+                "n_pred_lus": len(set(df["plu_global"])),
+                "n_true_lus": len(
+                    set(
+                        df.apply(
+                            lambda row: row["lu_name"] + "_" + row["frame"], axis=1
+                        )
+                    )
+                ),
+            }
+        )
 
     write_json(metrics, args.output_dir / f"metrics_{args.split}.json")
     write_json(params, args.output_dir / "params.json")
