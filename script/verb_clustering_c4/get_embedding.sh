@@ -7,32 +7,43 @@ settings=(all_3_0 all_3_1 all_3_2)
 # settings=(all_3_0)
 
 pretrained_model_name=bert-base-uncased
+
 vec_types=(word mask)
 # vec_types=(word)
 # vec_types=(mask)
 
-# model_name=vanilla
-# model_name=softmax_classification
 # model_name=adacos_classification
+# model_name=softmax_classification
+# model_name=vanilla
 # run_numbers=(00)
 
 # model_name=arcface_classification
-# model_name=siamese_distance
-model_name=triplet_distance
+model_name=siamese_distance
+# model_name=triplet_distance
 run_numbers=(00 01 02 03)
 
 splits=(train dev test)
 # splits=(train)
 # splits=(dev)
 # splits=(test)
+# splits=(test-c4)
+# splits=(test-framenet)
+
+# add_method=ratio
+# add_method=sequential
+
+# c4_rate=2
 
 device=cuda:3
 
-c4_rate=2
 
-# add_method=sequential
-add_method=ratio
-
+add_method=c4first
+c4_rate=1
+splits=(train dev test-c4 test-framenet) # add_method=c4firstの場合
+# splits=(train)
+# splits=(dev)
+# splits=(test-c4)
+# splits=(test-framenet)
 
 for setting in "${settings[@]}"; do
     for vec_type in "${vec_types[@]}"; do
