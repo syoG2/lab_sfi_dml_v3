@@ -2,7 +2,7 @@
 
 source_dir=./source/verb_clustering
 # data_dir=./data/verb_clustering
-data_dir=./data/verb_clustering/c4_rate_0/
+data_dir=./data/verb_clustering/
 
 settings=(all_3_0 all_3_1 all_3_2)
 
@@ -22,7 +22,8 @@ device=cuda:0
 for setting in "${settings[@]}"; do
     for vec_type in "${vec_types[@]}"; do
         for run_number in "${run_numbers[@]}"; do
-            d1=${setting}
+            # d1=${setting}
+            d1="ratio/0/${setting}"
             d2=${pretrained_model_name}/${model_name}/${vec_type}/${run_number}
             uv run python ${source_dir}/train_model.py \
                 --input_train_file "${data_dir}/dataset/${d1}/exemplars_train.jsonl" \
@@ -44,7 +45,8 @@ for setting in "${settings[@]}"; do
     for vec_type in "${vec_types[@]}"; do
         for run_number in "${run_numbers[@]}"; do
             for split in "${splits[@]}"; do
-                d1=${setting}
+                # d1=${setting}
+                d1="ratio/0/${setting}"
                 d2=${pretrained_model_name}/${model_name}/${vec_type}/${run_number}
                 uv run python ${source_dir}/get_embedding.py \
                     --input_file "${data_dir}/dataset/${d1}/exemplars_${split}.jsonl" \
