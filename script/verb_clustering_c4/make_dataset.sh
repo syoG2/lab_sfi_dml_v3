@@ -8,14 +8,21 @@ setting_prefix=all
 n_splits=3
 
 add_method=c4first
-# add_method=ratio
-# add_method=sequential
+add_method=ratio
+add_method=sequential
+
+add_method=c4first_verb
+add_method=ratio_verb
+add_method=sequential_verb
 
 c4_rate=1
 
+verb_form=original
+# verb_form=lemma
+
 uv run python ${source_dir}/make_dataset.py \
-    --input_file ${input_dir}/exemplars.jsonl \
-    --output_dir ${data_dir}/${add_method} \
+    --input_file ${input_dir}/${verb_form}/exemplars.jsonl \
+    --output_dir ${data_dir}/${verb_form}/${add_method} \
     --setting_prefix ${setting_prefix} \
     --n_splits ${n_splits} \
     --c4_rate ${c4_rate} \
