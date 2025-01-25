@@ -428,7 +428,7 @@ def main(args):
         output_dir = args.output_dir / str(args.c4_rate) / setting
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        if args.add_method == "c4first":
+        if (args.add_method == "c4first") | (args.add_method == "c4first_verb"):
             for split in ["test-framenet", "test-c4", "dev", "train"]:
                 if split == "test-framenet":
                     df_split = df[
