@@ -34,11 +34,10 @@ def main(args):
     )
 
     # [ ]:plu_local,plu_globalを無視させる方法を考える
-    # if ("plu_local" in c4_cluster.keys()) and ("plu_global" in c4_cluster.keys()):
-    #     c4_cluster = c4_cluster[["ex_idx", "plu_local", "plu_global", "frame_cluster"]]
-    # else:
-    #     c4_cluster = c4_cluster[["ex_idx", "frame_cluster"]]
-    c4_cluster = c4_cluster[["ex_idx", "plu_local", "plu_global", "frame_cluster"]]
+    if ("plu_local" in c4_cluster.keys()) and ("plu_global" in c4_cluster.keys()):
+        c4_cluster = c4_cluster[["ex_idx", "plu_local", "plu_global", "frame_cluster"]]
+    else:
+        c4_cluster = c4_cluster[["ex_idx", "frame_cluster"]]
 
     df_vec_c4, vec_array_c4 = read_embedding(
         args.input_embedding_dir, "test-c4", args.vec_type2run_number, args.alpha
