@@ -11,22 +11,20 @@ pretrained_model_name=bert-base-uncased
 # pretrained_model_name=roberta-large
 
 model_names=(vanilla softmax_classification adacos_classification siamese_distance triplet_distance arcface_classification)
-# model_names=(triplet_distance)
-# model_names=(vanilla)
 
 vec_types=(mask word wm)
 # vec_types=(wm)
 
 clustering_name_methods=(onestep-average twostep-xmeans-average twostep_lu-xmeans-average)
-# clustering_name_methods=(twostep-xmeans-average)
 
 split="test"
+
+add_methods=(ratio sequential c4first c4first_verb)
 c4_rates=(0 1 2)
 
-add_methods=(ratio sequential)
+verb_form=original
+# verb_form=lemma
 
-# add_methods=(c4first)
-# c4_rates=(1)
 for add_method in "${add_methods[@]}"; do
     for c4_rate in "${c4_rates[@]}"; do
         for model_name in "${model_names[@]}"; do
@@ -38,12 +36,12 @@ for add_method in "${add_methods[@]}"; do
                     input_dirs=()
                     for setting in "${settings[@]}"; do
                         d1=${setting}
-                        input_dirs+=("${data_dir}/evaluate_clustering_ours/${add_method}/${c4_rate}/${d1}/${d2}/${d3}")
+                        input_dirs+=("${data_dir}/evaluate_clustering_ours/${verb_form}/${add_method}/${c4_rate}/${d1}/${d2}/${d3}")
                     done
 
                     uv run python ${source_dir}/aggregate_scores.py \
                         --input_dirs "${input_dirs[@]}" \
-                        --output_dir "${data_dir}/aggregate_scores_clustering/${add_method}/${c4_rate}/${d2}/${d3}" \
+                        --output_dir "${data_dir}/aggregate_scores_clustering/${verb_form}/${add_method}/${c4_rate}/${d2}/${d3}" \
                         --split ${split}
                 done
             done

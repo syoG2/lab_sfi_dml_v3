@@ -36,6 +36,9 @@ c4_rate=1
 
 add_method=c4first
 
+verb_form=original
+# verb_form=lemma
+
 for setting in "${settings[@]}"; do
     for model_name in "${model_names[@]}"; do
         for vec_type in "${vec_types[@]}"; do
@@ -43,10 +46,10 @@ for setting in "${settings[@]}"; do
             d2=${vec_type}/${clustering_name}-${clustering_method1}-${clustering_method2}
 
             uv run python ${source_dir}/nearest_neighbor.py \
-                --input_embedding_dir "${data_dir}/embedding/${add_method}/${c4_rate}/${d1}" \
-                --input_clustering_dir "${data_dir}/clustering/${add_method}/${c4_rate}/${d1}/${d2}" \
-                --output_dir "${data_dir}/clustering/${add_method}/${c4_rate}/${d1}/${d2}" \
-                --input_params_file "${data_dir}/best_params_clustering/${add_method}/${c4_rate}/${d1}/${d2}/best_params.json"
+                --input_embedding_dir "${data_dir}/embedding/${verb_form}/${add_method}/${c4_rate}/${d1}" \
+                --input_clustering_dir "${data_dir}/clustering/${verb_form}/${add_method}/${c4_rate}/${d1}/${d2}" \
+                --output_dir "${data_dir}/clustering/${verb_form}/${add_method}/${c4_rate}/${d1}/${d2}" \
+                --input_params_file "${data_dir}/best_params_clustering/${verb_form}/${add_method}/${c4_rate}/${d1}/${d2}/best_params.json"
         done
     done
 done
