@@ -18,6 +18,7 @@ def main(args: Namespace) -> None:
     pred = df.groupby("frame_cluster")["ex_idx"].agg(list).tolist()
     metrics = calculate_clustering_scores(true, pred)
 
+    # [ ]:pluの評価の仕方を考える
     if params["clustering_name"] == "twostep":
         metrics.update(
             {
