@@ -23,6 +23,7 @@ dependencies = [
     "seqeval>=1.2.2",
     "spacy-alignments>=0.9.1",
     "stanza>=1.10.1",
+    "tabulate>=0.9.0",
     "timeout-decorator>=0.5.0",
     "transformers>=4.47.1",
 ]
