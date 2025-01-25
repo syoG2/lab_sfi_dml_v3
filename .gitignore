@@ -10,6 +10,7 @@ dump/
 temp/
 analysis/
 pyrightconfig.json
+viewdata/*.txt
 
 # *.ipynb
 *try*
