@@ -10,6 +10,11 @@ def main(args: Namespace) -> None:
 
     metrics = {}
     for i, input_dir in enumerate(args.input_dirs):
+        if not (input_dir / f"metrics_{args.split}.json").exists():
+            print(
+                f"\033[31m{input_dir}/metrics_{args.split}.json does not exist.\033[0m"
+            )
+            return
         metrics_i = read_json(input_dir / f"metrics_{args.split}.json")
         if (input_dir / "params.json").exists():
             params = read_json(input_dir / "params.json")
