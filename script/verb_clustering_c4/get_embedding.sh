@@ -33,6 +33,8 @@ run_numbers=(00)
 # add_method=sequential
 # add_method=ratio_verb
 
+add_method=sequential_n_verb
+
 c4_rate=1
 
 device=cuda:0

@@ -85,23 +85,23 @@ def make_table(verb_form="", add_method="", c4_rate=-1, input_dir=""):
     return output_txt
 
 
-# 山田さんの再試結果
 with open("./viewdata/aggregate_score.txt", "w") as f:
-    txt = make_table(
-        input_dir="./data/verb_clustering/aggregate_scores_clustering/bert-base-uncased/"
-    )
-    f.write(txt + "\n\n")
+    # # 山田さんの再試結果
+    # txt = make_table(
+    #     input_dir="./data/verb_clustering/aggregate_scores_clustering/bert-base-uncased/"
+    # )
+    # f.write(txt + "\n\n")
     # c4を先にクラスタリングした場合の結果
-    txt = make_table(verb_form="lemma", add_method="c4first", c4_rate=1)
-    f.write(txt + "\n")
+    # txt = make_table(verb_form="lemma", add_method="c4first", c4_rate=1)
+    # f.write(txt + "\n")
     txt = make_table(verb_form="original", add_method="c4first", c4_rate=1)
     f.write(txt + "\n\n")
+    txt = make_table(verb_form="original", add_method="c4first_verb", c4_rate=1)
+    f.write(txt + "\n\n")
     # c4を混ぜてクラスタリングした結果
-    add_methods = ["ratio", "sequential"]
-    c4_rates = [0, 1, 2]
-    for add_method in ["ratio", "sequential"]:
+    for add_method in ["ratio"]:
         for c4_rate in [0, 1, 2]:
-            for verb_form in ["lemma", "original"]:
+            for verb_form in ["original"]:
                 txt = make_table(
                     verb_form=verb_form, add_method=add_method, c4_rate=c4_rate
                 )

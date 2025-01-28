@@ -255,6 +255,42 @@ def main(args):
                                     if lu not in verb_to_remove
                                 ]
 
+                        elif args.add_method == "sequential_n_verb":
+                            for n in tqdm(range(args.n_splits), leave=False):
+                                setting = settings[n]
+                                additional = df_c4[df_c4["verb"].isin(verb_list[n])]
+                                additional.loc[:, setting] = "test"
+                                df = pd.concat([df, additional], ignore_index=True)
+
+                                # 必要なデータのみをフィルタリング
+                                test_df = df[
+                                    (df[setting] == "test")
+                                    & df["verb"].isin(verb_list[n])
+                                ]
+
+                                # グループ化してカウントを取得
+                                counts = (
+                                    test_df.groupby(["verb", "source"])
+                                    .size()
+                                    .unstack(fill_value=0)
+                                )
+
+                                # framenet_count と c4_count を取得
+                                counts["framenet_count"] = counts.get("framenet", 0)
+                                counts["c4_count"] = counts.get("c4", 0)
+
+                                # フラグを作成して削除対象を特定
+                                # c4のデータが十分集まったLUはこれ以降追加しない
+                                verb_to_remove = counts[
+                                    args.maximum_verb <= counts["c4_count"]
+                                ].index.tolist()
+
+                                # 一括で削除
+                                verb_list[n] = [
+                                    lu
+                                    for lu in verb_list[n]
+                                    if lu not in verb_to_remove
+                                ]
                         elif args.add_method == "sequential":
                             ok = True
                             for n in tqdm(range(args.n_splits), leave=False):
@@ -390,6 +426,32 @@ def main(args):
                 with open(output_dir / "incomplete_lus.txt", "w") as f:
                     for verb in incomplete_verbs[n]:
                         print(verb, file=f)
+        elif args.add_method == "sequential_n_verb":
+            for n in tqdm(range(args.n_splits)):
+                setting = settings[n]
+                for verb in tqdm(df[df[setting] == "test"]["verb"].unique()):
+                    framenet_count = df[
+                        (df["source"] == "framenet")
+                        & (df[setting] == "test")
+                        & (df["verb"] == verb)
+                    ].shape[0]
+                    c4_count = df[
+                        (df["source"] == "c4")
+                        & (df[setting] == "test")
+                        & (df["verb"] == verb)
+                    ].shape[0]
+                    if c4_count > args.maximum_verb:
+                        remove = df[
+                            (df["source"] == "c4")
+                            & (df[setting] == "test")
+                            & (df["verb"] == verb)
+                        ].tail(c4_count - (args.maximum_verb))
+                        df = df.drop(remove.index)
+            for n in tqdm(range(args.n_splits)):
+                setting = f"{args.setting_prefix}_{args.n_splits}_{n}"
+                output_dir = args.output_dir / str(args.c4_rate) / setting
+                output_dir.mkdir(parents=True, exist_ok=True)
+
         elif args.add_method == "sequential":
             for n in tqdm(range(args.n_splits)):
                 setting = settings[n]
@@ -403,7 +465,7 @@ def main(args):
                     )
                 else:
                     remove = df[(df["source"] == "c4") & (df[setting] == "test")].tail(
-                        c4_count - (framenet_count * args.c4_rate)
+                        c4_count - framenet_count * args.c4_rate
                     )
                     df = df.drop(remove.index)
         elif args.add_method == "sequential_verb":
@@ -469,8 +531,10 @@ if __name__ == "__main__":
             "ratio_verb",
             "sequential_verb",
             "c4first_verb",
+            "sequential_n_verb",
         ],
     )
+    parser.add_argument("--maximum_verb", type=int, default=100)
     parser.add_argument("--drop", type=bool, default=False)
     args = parser.parse_args()
     print(args)

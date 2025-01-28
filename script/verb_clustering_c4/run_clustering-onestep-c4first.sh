@@ -11,13 +11,13 @@ pretrained_model_name=bert-base-uncased
 # pretrained_model_name=bert-large-uncased
 # pretrained_model_name=roberta-large
 
-model_names=(vanilla softmax_classification adacos_classification)
+model_names=(adacos_classification softmax_classification vanilla)
 # model_names=(adacos_classification)
 # model_names=(softmax_classification)
 # model_names=(vanilla)
 run_numbers=(00)
 
-# model_names=(siamese_distance triplet_distance arcface_classification)
+# model_names=(arcface_classification siamese_distance triplet_distance)
 model_names=(arcface_classification)
 model_names=(siamese_distance)
 model_names=(triplet_distance)
@@ -33,7 +33,8 @@ clustering_method=average
 
 c4_rate=1
 
-add_method=c4first
+# add_method=c4first
+add_method=c4first_verb
 
 verb_form=original
 # verb_form=lemma

@@ -27,8 +27,8 @@ vec_types=(mask wm word)
 # vec_types=(wm)
 # vec_types=(word)
 
-clustering_name=twostep
-# clustering_name=twostep_lu
+# clustering_name=twostep
+clustering_name=twostep_lu
 clustering_method1=xmeans
 clustering_method2=average
 

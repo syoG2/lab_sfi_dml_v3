@@ -7,13 +7,14 @@ input_dir=./data/preprocessing/framenet/preprocess
 setting_prefix=all
 n_splits=3
 
-add_method=c4first
+# add_method=c4first
 # add_method=ratio
 # add_method=sequential
 
 # add_method=c4first_verb
 # add_method=ratio_verb
 # add_method=sequential_verb
+add_method=sequential_n_verb
 
 c4_rate=1
 
