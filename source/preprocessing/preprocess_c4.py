@@ -130,6 +130,8 @@ def get_doc_sentence(nlp: stanza.Pipeline, text: str) -> list:
         ]
     except TimeoutError:
         return []
+    except RuntimeError:
+        return []
 
 
 def lu_char_to_word_index(text: str, idx: list[list[int]]) -> list[int]:
