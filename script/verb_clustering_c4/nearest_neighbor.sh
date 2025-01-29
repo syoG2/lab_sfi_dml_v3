@@ -1,6 +1,4 @@
 #!/bin/bash
-# [ ]:C4で先にクラスタリングを行い、そのクラスタの最近傍点にFrameNetの用例を割り当てるスクリプトを作成
-
 source_dir=./source/verb_clustering_c4
 data_dir=./data/verb_clustering_c4
 
