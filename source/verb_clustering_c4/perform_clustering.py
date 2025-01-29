@@ -50,7 +50,7 @@ def main(args):
     elif args.clustering_name == "twostep_lu":
         df_clu_dev = clustering.step(df_vec, vec_array, vec_array, params)
 
-    # [ ]:C4のみで先にクラスタリングする場合、splitの部分を変更する
+    # C4のみで先にクラスタリングする場合、splitの部分を変更する
     if args.c4first:
         df_vec, vec_array = read_embedding(
             args.input_dir, "test-c4", args.vec_type2run_number, args.alpha
@@ -72,7 +72,7 @@ def main(args):
         (args.output_dir / "exemplars_dev.jsonl"),
     )
 
-    # [ ]:C4のみで先にクラスタリングする場合、出力ファイルをexemplars_test-c4.jsonlに変更する
+    # C4のみで先にクラスタリングする場合、出力ファイルをexemplars_test-c4.jsonlに変更する
     if args.c4first:
         write_jsonl(
             df_clu_test.to_dict("records"),
