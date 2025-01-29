@@ -63,8 +63,8 @@ def list_cluster(
     # c4_ratioで降順ソート、同率の場合はsizeで降順ソート
     c4_ratio_sorted = c4_ratio_df.sort_values(by=by, ascending=[False] * len(by))
 
-    # output_txt += f"{c4_ratio_sorted[:top_n].to_markdown()}\n\n"
-    output_txt += f"{c4_ratio_sorted.to_markdown()}\n\n"
+    output_txt += f"{c4_ratio_sorted[:top_n].to_markdown()}\n\n"
+    # output_txt += f"{c4_ratio_sorted.to_markdown()}\n\n"
 
     for i, cluster_id in enumerate(c4_ratio_sorted.index[:top_n]):
         output_txt += f"{i} verb_form: {verb_form} add_method: {add_method} c4_rate: {c4_rate} setting: {setting} model_name: {model_name} clustering_method: {clustering_method} i: {i} cluster_id: {cluster_id}\n"
@@ -220,14 +220,14 @@ txt = list_cluster(
     settings[2],
     model_names[2],
     clustering_methods[0],
-    top_n=100,
+    top_n=20,
 )
 
 # txt = get_distinct_clusters(
 #     verb_forms[1],
 #     add_methods[3],
 #     c4_rates[1],
-#     settings[2],
+#     settings[1],
 #     model_names[2],
 #     clustering_methods[0],
 #     top_n=20,
