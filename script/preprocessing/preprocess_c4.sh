@@ -10,7 +10,7 @@ model_dir=./data/preprocessing/lu_classifier/models/bert-base-uncased/${text_inp
 split_name="train"
 
 device=cuda:3
-for ((file_id=5; file_id<6; file_id++));do
+for ((file_id=6; file_id<7; file_id++));do
     for ((part_id=300; part_id<350; part_id += 1));do
         formatted_file_id=$(printf "%05d" ${file_id})
         uv run python ${source_dir}/preprocess_c4.py\
