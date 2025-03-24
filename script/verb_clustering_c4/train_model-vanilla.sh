@@ -19,8 +19,8 @@ device=cuda:0
 c4_rate=0
 
 # add_methodはどちらでも同じ
-# add_method=sequential
 add_method=ratio
+# add_method=sequential
 
 verb_form=original
 # verb_form=lemma
