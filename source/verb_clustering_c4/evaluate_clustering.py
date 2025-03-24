@@ -11,33 +11,43 @@ def main(args: Namespace) -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.DataFrame(read_jsonl(args.input_file))
-    df = df[df["source"] == "framenet"]
+    df_c4 = df[df["source"] == "c4"]
+
+    df_framenet = df[df["source"] == "framenet"]
     params = read_json(args.input_params_file)
 
-    true = df.groupby("frame")["ex_idx"].agg(list).tolist()
-    pred = df.groupby("frame_cluster")["ex_idx"].agg(list).tolist()
+    true = df_framenet.groupby("frame")["ex_idx"].agg(list).tolist()
+    pred = df_framenet.groupby("frame_cluster")["ex_idx"].agg(list).tolist()
     metrics = calculate_clustering_scores(true, pred)
+
+    metrics.update(
+        {
+            "n_pred_clusters_c4": len(set(df_c4["frame_cluster"])),
+        }
+    )
 
     # [ ]:pluの評価の仕方を考える
     if params["clustering_name"] == "twostep":
         metrics.update(
             {
-                "n_pred_lus": len(set(df["plu_global"])),
-                "n_true_lus": len(set(df["verb_frame"])),
+                "n_pred_lus_framenet": len(set(df_framenet["plu_global"])),
+                "n_true_lus_framenet": len(set(df_framenet["verb_frame"])),
+                "n_pred_lus_c4": len(set(df_c4["plu_global"])),
             }
         )
     elif params["clustering_name"] == "twostep_lu":
         # [ ]:LUを元に2段階クラスタリングした場合の評価値として適切か確認する
         metrics.update(
             {
-                "n_pred_lus": len(set(df["plu_global"])),
-                "n_true_lus": len(
+                "n_pred_lus_framenet": len(set(df_framenet["plu_global"])),
+                "n_true_lus_framenet": len(
                     set(
-                        df.apply(
+                        df_framenet.apply(
                             lambda row: row["lu_name"] + "_" + row["frame"], axis=1
                         )
                     )
                 ),
+                "n_pred_lus_c4": len(set(df_c4["plu_global"])),
             }
         )
 

@@ -17,28 +17,40 @@ import pandas as pd
 # add_methods = ["ratio","sequential","c4first","ratio_verb","sequential_verb","c4first_verb"]
 
 
-def make_table(verb_form="", add_method="", c4_rate=-1, input_dir=""):
+def make_table(
+    verb_form="",
+    add_method="",
+    add_key="",
+    clustering_dataset="c4first",
+    c4_rate=-1,
+    input_dir="",
+    vec_type="wm",
+):
     # スコアをmarkdownの表形式で出力
     output_txt = ""
-    if (input_dir == "") and (verb_form == "" or add_method == "" or c4_rate < 0):
-        output_txt += (
-            "input_dirかverb_form,add_method,c4_rateのいずれかを指定してください\n"
-        )
+    if (input_dir == "") and (
+        verb_form == ""
+        or add_method == ""
+        or add_key == ""
+        or clustering_dataset == ""
+        or c4_rate < 0
+    ):
+        output_txt += f"{verb_form},{add_method},{add_key},{clustering_dataset},{c4_rate},{vec_type}のいずれかが指定されていません\n"
 
         return output_txt
 
     if input_dir != "":
-        output_txt += f"input_dir:{input_dir}\n"
+        output_txt += f"{input_dir}\n"
     else:
-        output_txt += (
-            f"verb_form:{verb_form},add_method:{add_method},c4_rate:{c4_rate}\n"
-        )
+        output_txt += f"{verb_form}/{add_method}/{add_key}/{clustering_dataset}/{c4_rate}/{vec_type}\n"
 
     df = pd.DataFrame()
     key = [
         "ave-alpha",
-        "ave-n_pred_lus",
+        # "ave-n_pred_lus_framenet",
+        "ave-n_pred_lus_c4",
         "ave-n_pred_clusters",
+        "ave-n_pred_clusters_c4",
         "ave-pu",
         "ave-ipu",
         "ave-puf",
@@ -67,7 +79,7 @@ def make_table(verb_form="", add_method="", c4_rate=-1, input_dir=""):
                 )
             else:
                 input_file = Path(
-                    f"./data/verb_clustering_c4/aggregate_scores_clustering/{verb_form}/{add_method}/{c4_rate}/bert-base-uncased/{model_name}/wm/{clustering}/metrics_test.json"
+                    f"./data/verb_clustering_c4/aggregate_scores_clustering/{verb_form}/{add_method}/{add_key}/{clustering_dataset}/{c4_rate}/bert-base-uncased/{model_name}/{vec_type}/{clustering}/metrics_test.json"
                 )
             series = pd.Series()
             if input_file.exists():
@@ -78,32 +90,63 @@ def make_table(verb_form="", add_method="", c4_rate=-1, input_dir=""):
             elif clustering == "twostep-xmeans-average":
                 df["2_" + model_name] = series
             else:
-                df["lu_" + model_name] = series
+                # df["lu_" + model_name] = series
+                continue
     df = df.T
     df = df.reindex(columns=key)
-    output_txt += df.to_markdown() + "\n"
+    df[["ave-pu", "ave-ipu", "ave-puf", "ave-bcp", "ave-bcr", "ave-bcf"]] = (
+        df[["ave-pu", "ave-ipu", "ave-puf", "ave-bcp", "ave-bcr", "ave-bcf"]] * 100
+    ).round(1)
+    output_txt += df.to_markdown() + "\n\n"
+    output_txt += df.to_latex(float_format="%.1f") + "\n\n"
+
     return output_txt
 
 
-with open("./viewdata/aggregate_score.txt", "w") as f:
-    # # 山田さんの再試結果
-    # txt = make_table(
-    #     input_dir="./data/verb_clustering/aggregate_scores_clustering/bert-base-uncased/"
-    # )
-    # f.write(txt + "\n\n")
-    # c4を先にクラスタリングした場合の結果
-    # txt = make_table(verb_form="lemma", add_method="c4first", c4_rate=1)
-    # f.write(txt + "\n")
-    txt = make_table(verb_form="original", add_method="c4first", c4_rate=1)
-    f.write(txt + "\n\n")
-    txt = make_table(verb_form="original", add_method="c4first_verb", c4_rate=1)
-    f.write(txt + "\n\n")
-    # c4を混ぜてクラスタリングした結果
-    for add_method in ["ratio"]:
-        for c4_rate in [0, 1, 2]:
-            for verb_form in ["original"]:
-                txt = make_table(
-                    verb_form=verb_form, add_method=add_method, c4_rate=c4_rate
-                )
-                f.write(txt + "\n")
-            f.write("\n\n")
+def main():
+    with open("./viewdata/aggregate_score.txt", "w") as f:
+        # # 山田さんの再試結果
+        # txt = make_table(
+        #     input_dir="./data/verb_clustering/aggregate_scores_clustering/bert-base-uncased/"
+        # )
+        # f.write(txt + "\n\n")
+        # c4を先にクラスタリングした場合の結果
+        # txt = make_table(verb_form="lemma", add_method="c4first", c4_rate=1)
+        # f.write(txt + "\n")
+        # txt = make_table(
+        #     verb_form="original",
+        #     add_method="c4first",
+        #     add_key="verb",
+        #     clustering_dataset="c4first",
+        #     c4_rate=1,
+        # )
+        # f.write(txt + "\n\n")
+        # txt = make_table(
+        #     verb_form="original",
+        #     add_method="c4first_verb",
+        #     add_key="verb",
+        #     clustering_dataset="c4first",
+        #     c4_rate=1,
+        # )
+        # f.write(txt + "\n\n")
+
+        # c4を混ぜてクラスタリングした結果
+        for add_method in ["ratio"]:
+            for c4_rate in [1]:
+                for verb_form in ["original"]:
+                    # for vec_type in ["mask", "wm", "word"]:
+                    for vec_type in ["wm"]:
+                        txt = make_table(
+                            verb_form=verb_form,
+                            add_method=add_method,
+                            add_key="verb",
+                            clustering_dataset="c4first",
+                            c4_rate=c4_rate,
+                            vec_type=vec_type,
+                        )
+                        f.write(txt + "\n")
+                    f.write("\n\n")
+
+
+if __name__ == "__main__":
+    main()

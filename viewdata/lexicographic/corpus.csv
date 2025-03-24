@@ -1,0 +1,14 @@
+ID,name,description
+111,BNC2,BNC2
+135,NTI,"Texts from Nuclear Threat Initiative website, created by Center for Non-Proliferation Studies"
+175,Miscellaneous,Miscellaneous
+185,KBEval,AQUAINT Knowledge-Based Evaluation Texts
+115,PropBank,Wall Street Journal Texts from the PropBank Project
+195,ANC,American National Corpus Texts
+205,LUCorpus-v0.3,LUCorpus-v0.3
+246,WikiTexts,Texts from WikiMedia--WikiNews and Wikipedia
+150,MASC,MASC
+113,AP,LDC Newswire corpus from AP
+164,ANC_r,ANC_r
+100,NYTIMES,NYTIMES
+140,BNC2_cxn,BNC2_cxn

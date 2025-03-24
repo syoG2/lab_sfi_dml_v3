@@ -11,10 +11,12 @@ pretrained_model_name=bert-base-uncased
 # pretrained_model_name=roberta-base
 # pretrained_model_name=roberta-large
 
+model_names=(adacos_classification arcface_classification siamese_distance softmax_classification triplet_distance vanilla)
+
 # model_names=(adacos_classification softmax_classification vanilla)
 # model_names=(adacos_classification)
 # model_names=(softmax_classification)
-model_names=(vanilla)
+# model_names=(vanilla)
 # run_numbers=(00)
 
 # model_names=(arcface_classification siamese_distance triplet_distance)
@@ -28,28 +30,58 @@ vec_types=(mask wm word)
 # vec_types=(wm)
 # vec_types=(word)
 
+# verb_form=lemma
+verb_form=original
+
+# add_method=frequency_100
+add_method=ratio
+
+# add_key=lu_name
+add_key=verb
+
+clustering_dataset=c4first
+# clustering_dataset=mix
+
 clustering_name=twostep
+# clustering_name=twostep_lu
 clustering_method1=xmeans
 clustering_method2=average
 
 c4_rate=1
 
-add_method=c4first
-# add_method=ratio
-# add_method=sequential
+# for model_name in "${model_names[@]}"; do
+#     for setting in "${settings[@]}"; do
+#         for vec_type in "${vec_types[@]}"; do
+#             d1=${setting}/${pretrained_model_name}/${model_name}
+#             d2=${vec_type}/${clustering_name}-${clustering_method1}-${clustering_method2}
 
-for setting in "${settings[@]}"; do
-    for model_name in "${model_names[@]}"; do
+#             splits=(dev test)
+#             for split in "${splits[@]}"; do
+#                 uv run python ${source_dir}/evaluate_clustering.py \
+#                     --input_file "${data_dir}/clustering/${verb_form}/${add_method}/${add_key}/${clustering_dataset}/${c4_rate}/${d1}/${d2}/exemplars_${split}.jsonl" \
+#                     --input_params_file "${data_dir}/clustering/${verb_form}/${add_method}/${add_key}/${clustering_dataset}/${c4_rate}/${d1}/${d2}/params.json" \
+#                     --output_dir "${data_dir}/evaluate_clustering_ours/${verb_form}/${add_method}/${add_key}/${clustering_dataset}/${c4_rate}/${d1}/${d2}" \
+#                     --split "${split}"
+#             done
+#         done
+#     done
+# done
+
+clustering_name=onestep
+clustering_method=average
+
+for model_name in "${model_names[@]}"; do
+    for setting in "${settings[@]}"; do
         for vec_type in "${vec_types[@]}"; do
             d1=${setting}/${pretrained_model_name}/${model_name}
-            d2=${vec_type}/${clustering_name}-${clustering_method1}-${clustering_method2}
+            d2=${vec_type}/${clustering_name}-${clustering_method}
 
             splits=(dev test)
             for split in "${splits[@]}"; do
                 uv run python ${source_dir}/evaluate_clustering.py \
-                    --input_file "${data_dir}/clustering/${add_method}/${c4_rate}/${d1}/${d2}/exemplars_${split}.jsonl" \
-                    --input_params_file "${data_dir}/clustering/${add_method}/${c4_rate}/${d1}/${d2}/params.json" \
-                    --output_dir "${data_dir}/evaluate_clustering_ours/${add_method}/${c4_rate}/${d1}/${d2}" \
+                    --input_file "${data_dir}/clustering/${verb_form}/${add_method}/${add_key}/${clustering_dataset}/${c4_rate}/${d1}/${d2}/exemplars_${split}.jsonl" \
+                    --input_params_file "${data_dir}/clustering/${verb_form}/${add_method}/${add_key}/${clustering_dataset}/${c4_rate}/${d1}/${d2}/params.json" \
+                    --output_dir "${data_dir}/evaluate_clustering_ours/${verb_form}/${add_method}/${add_key}/${clustering_dataset}/${c4_rate}/${d1}/${d2}" \
                     --split "${split}"
             done
         done

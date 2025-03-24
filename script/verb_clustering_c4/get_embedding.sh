@@ -4,7 +4,7 @@ source_dir=./source/verb_clustering_c4
 data_dir=./data/verb_clustering_c4
 
 settings=(all_3_0 all_3_1 all_3_2)
-settings=(all_3_0)
+# settings=(all_3_0)
 
 pretrained_model_name=bert-base-uncased
 
@@ -20,19 +20,19 @@ run_numbers=(00)
 
 # model_names=(arcface_classification siamese_distance triplet_distance)
 model_names=(arcface_classification)
-model_names=(siamese_distance)
-model_names=(triplet_distance)
+# model_names=(siamese_distance)
+# model_names=(triplet_distance)
 run_numbers=(00 01 02 03)
 
 
 splits=(train dev test test-c4 test-framenet) # add_method=c4firstの場合
-splits=(test-framenet)
+# splits=(test-framenet)
 
 # verb_form=lemma
 verb_form=original
 
-add_method=frequency_100
-# add_method=ratio
+# add_method=frequency_100
+add_method=ratio
 
 # add_key=lu_name
 add_key=verb
@@ -41,7 +41,7 @@ add_key=verb
 # clustering_dataset=mix
 
 c4_rate=1
-device=cuda:0
+device=cuda:1
 
 for setting in "${settings[@]}"; do
     for model_name in "${model_names[@]}"; do

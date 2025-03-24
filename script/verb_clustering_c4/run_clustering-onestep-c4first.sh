@@ -18,10 +18,10 @@ model_names=(adacos_classification softmax_classification vanilla)
 run_numbers=(00)
 
 # model_names=(arcface_classification siamese_distance triplet_distance)
-model_names=(arcface_classification)
-model_names=(siamese_distance)
-model_names=(triplet_distance)
-run_numbers=(00 01 02 03)
+# model_names=(arcface_classification)
+# model_names=(siamese_distance)
+# model_names=(triplet_distance)
+# run_numbers=(00 01 02 03)
 
 vec_types=(mask wm word)
 # vec_types=(mask)
@@ -39,8 +39,8 @@ add_method=c4first_verb
 verb_form=original
 # verb_form=lemma
 
-for setting in "${settings[@]}"; do
-    for model_name in "${model_names[@]}"; do
+for model_name in "${model_names[@]}"; do
+    for setting in "${settings[@]}"; do
         for vec_type in "${vec_types[@]}"; do
             d1=${setting}/${pretrained_model_name}/${model_name}
             d2=${vec_type}/${clustering_name}-${clustering_method}

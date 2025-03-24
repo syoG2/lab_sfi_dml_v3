@@ -20,15 +20,14 @@ n_splits=3
 # verb_form=lemma
 verb_form=original
 
-# add_method=frequency_100
-add_method=ratio
+add_method=frequency_100
+# add_method=ratio
 
 # add_key=lu_name
 add_key=verb
 
 # clustering_dataset=c4first
 # clustering_dataset=mix
-
 
 c4_rate=1
 
