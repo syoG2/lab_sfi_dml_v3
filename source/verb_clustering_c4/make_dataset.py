@@ -215,7 +215,7 @@ def main(args):
             required_items_list.append(required_items)
 
         df_c4_list = read_c4_datasets(
-            [0, 1, 2, 3, 4, 5],
+            [i for i in range(args.c4_file_id + 1)],
             list(range(350)),
             ["train"],
             required_items_list,
@@ -269,6 +269,7 @@ if __name__ == "__main__":
     parser.add_argument("--setting_prefix", type=str, default="all")
     parser.add_argument("--n_splits", type=int, default=3)
     parser.add_argument("--c4_rate", type=int, default=0)
+    parser.add_argument("--c4_file_id", type=int, default=6)
     # parser.add_argument("--add_method", type=str, choices=["ratio", "frequency"])
     parser.add_argument("--add_method", type=str, default="frequency_100")
     parser.add_argument("--add_key", type=str, choices=["lu_name", "verb"])
