@@ -20,8 +20,8 @@ run_numbers=(00)
 
 # model_names=(arcface_classification siamese_distance triplet_distance)
 model_names=(arcface_classification)
-# model_names=(siamese_distance)
-# model_names=(triplet_distance)
+model_names=(siamese_distance)
+model_names=(triplet_distance)
 run_numbers=(00 01 02 03)
 
 
@@ -31,7 +31,7 @@ splits=(train dev test test-c4 test-framenet) # add_method=c4firstの場合
 # verb_form=lemma
 verb_form=original
 
-# add_method=frequency_100
+add_method=frequency_100
 add_method=ratio
 
 # add_key=lu_name
@@ -40,8 +40,8 @@ add_key=verb
 # clustering_dataset=c4first
 # clustering_dataset=mix
 
-c4_rate=1
-device=cuda:1
+c4_rate=2
+device=cuda:3
 
 for setting in "${settings[@]}"; do
     for model_name in "${model_names[@]}"; do
