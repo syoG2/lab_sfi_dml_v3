@@ -18,10 +18,10 @@ model_names=(adacos_classification softmax_classification vanilla)
 run_numbers=(00)
 
 # model_names=(arcface_classification siamese_distance triplet_distance)
-model_names=(arcface_classification)
-model_names=(siamese_distance)
-model_names=(triplet_distance)
-run_numbers=(00 01 02 03)
+# model_names=(arcface_classification)
+# model_names=(siamese_distance)
+# model_names=(triplet_distance)
+# run_numbers=(00 01 02 03)
 
 vec_types=(mask wm word)
 # vec_types=(mask)
@@ -32,8 +32,8 @@ vec_types=(mask wm word)
 # verb_form=lemma
 verb_form=original
 
-# add_method=frequency_100
-add_method=ratio
+add_method=frequency_100
+# add_method=ratio
 
 # add_key=lu_name
 add_key=verb
@@ -46,7 +46,7 @@ clustering_name=twostep
 clustering_method1=xmeans
 clustering_method2=average
 
-c4_rate=1
+c4_rate=2
 
 for model_name in "${model_names[@]}"; do
     for setting in "${settings[@]}"; do

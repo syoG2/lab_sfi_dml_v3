@@ -22,14 +22,14 @@ split="test"
 
 # verb_forms=(original lemma)
 verb_forms=(original)
-# add_methods=(ratio frequency_100)
-add_methods=(ratio)
+add_methods=(ratio frequency_100)
+# add_methods=(ratio)
 # add_keys=(verb lu_name)
 add_keys=(verb)
 # clustering_datasets=(c4first mix)
 clustering_datasets=(c4first)
 # c4_rates=(0 1 2)
-c4_rates=(1)
+c4_rates=(1 2)
 
 for add_key in "${add_keys[@]}"; do
     for clustering_dataset in "${clustering_datasets[@]}"; do

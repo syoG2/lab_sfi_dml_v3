@@ -1,3 +1,5 @@
+# os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # 再現性のために追加
+
 import argparse
 from pathlib import Path
 from socket import gethostname
@@ -19,14 +21,12 @@ from sfidml.f_induc.dataset import (
     SiameseDataset,
     TripletDataset,
 )
-from sfidml.f_induc.embedding import BaseEmbedding
 from sfidml.f_induc.model import (
     BaseNet,
     ClassificationNet,
     SiameseNet,
     TripletNet,
 )
-from sfidml.f_induc.ranking import run_ranking
 from sfidml.utils.data_utils import read_jsonl, write_json, write_jsonl
 from sfidml.utils.model_utils import fix_seed
 
@@ -56,6 +56,8 @@ def step(dl, model, optimizer=None):
 
 
 def main(args):
+    # torch.use_deterministic_algorithms(True)  # 再現性のために追加
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     df_train = pd.DataFrame(read_jsonl(args.input_train_file))
@@ -140,9 +142,7 @@ def main(args):
             #     {f"dev-{k}": v for k, v in ranking_scores_dev.items()}
             # )
             log_list.append(log_dict)
-            torch.save(
-                optimizer.state_dict(), args.output_dir / "optimizer.pth"
-            )
+            torch.save(optimizer.state_dict(), args.output_dir / "optimizer.pth")
     else:
         # embedding = BaseEmbedding(
         #         model.pretrained_model,

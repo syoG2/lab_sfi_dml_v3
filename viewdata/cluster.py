@@ -77,11 +77,11 @@ def list_cluster(
     # c4_ratioで降順ソート、同率の場合はsizeで降順ソート
     c4_ratio_sorted = all_c4_ratio_df.sort_values(by=by, ascending=[False] * len(by))
 
-    # output_txt += f"{c4_ratio_sorted[:top_n].to_markdown()}\n\n"
-    output_txt += f"{c4_ratio_sorted.to_markdown()}\n\n"
+    output_txt += f"{c4_ratio_sorted[:top_n].to_markdown()}\n\n"
+    # output_txt += f"{c4_ratio_sorted.to_markdown()}\n\n"
 
-    # for i, (cluster_id, row) in enumerate(c4_ratio_sorted.iloc[:top_n].iterrows()):
-    for i, (cluster_id, row) in enumerate(c4_ratio_sorted.iterrows()):
+    for i, (cluster_id, row) in enumerate(c4_ratio_sorted.iloc[:top_n].iterrows()):
+        # for i, (cluster_id, row) in enumerate(c4_ratio_sorted.iterrows()):
         setting = row["setting"]
         output_txt += f"{i} verb_form: {verb_form} add_method: {add_method} c4_rate: {c4_rate} setting: {setting} model_name: {model_name} clustering_method: {clustering_method} vec_type:{vec_type} i: {i} cluster_id: {cluster_id}\n"
 
@@ -99,7 +99,7 @@ def list_cluster(
             axis=1,
         )
         cluster = cluster.sort_values(by=["source", "lu_name"], ascending=False)
-        cluster = cluster[["frame", "lu_name", "text_widx"]]
+        cluster = cluster[["frame", "verb", "lu_name", "text_widx"]]
         output_txt += f"{c4_ratio_sorted[c4_ratio_sorted['setting'] == setting]['lu_counts'][cluster_id]}\n"
         output_txt += f"{cluster}\n\n"
 
@@ -237,15 +237,15 @@ def main():
 
     txt = list_cluster(
         verb_forms[1],
-        add_methods[0],
+        add_methods[1],
         add_keys[0],
         clustering_datasets[0],
         c4_rates[1],
         settings,
-        model_names[2],
+        model_names[5],
         clustering_methods[0],
         vec_type="wm",
-        top_n=20,
+        top_n=500,
     )
 
     # txt = get_distinct_clusters(
@@ -258,7 +258,7 @@ def main():
     #     top_n=20,
     # )
 
-    with open("./viewdata/cluster.txt", "w") as f:
+    with open("./viewdata/cluster/cluster.txt", "w") as f:
         f.write(txt)
 
 

@@ -16,7 +16,7 @@ model_name=softmax_classification
 
 run_numbers=(00)
 
-device=cuda:2
+device=cuda:3
 
 # c4_rateの値はどれでも良い
 c4_rate=0

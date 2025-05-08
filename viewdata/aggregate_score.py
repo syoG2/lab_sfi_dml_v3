@@ -69,7 +69,6 @@ def make_table(
     clusterings = [
         "onestep-average",
         "twostep-xmeans-average",
-        "twostep_lu-xmeans-average",
     ]
     for clustering in clusterings:
         for model_name in model_names:
@@ -98,13 +97,13 @@ def make_table(
         df[["ave-pu", "ave-ipu", "ave-puf", "ave-bcp", "ave-bcr", "ave-bcf"]] * 100
     ).round(1)
     output_txt += df.to_markdown() + "\n\n"
-    output_txt += df.to_latex(float_format="%.1f") + "\n\n"
+    # output_txt += df.to_latex(float_format="%.1f") + "\n\n"
 
     return output_txt
 
 
 def main():
-    with open("./viewdata/aggregate_score.txt", "w") as f:
+    with open("./viewdata/aggregate_score/aggregate_score.txt", "w") as f:
         # # 山田さんの再試結果
         # txt = make_table(
         #     input_dir="./data/verb_clustering/aggregate_scores_clustering/bert-base-uncased/"
@@ -131,11 +130,10 @@ def main():
         # f.write(txt + "\n\n")
 
         # c4を混ぜてクラスタリングした結果
-        for add_method in ["ratio"]:
-            for c4_rate in [1]:
+        for add_method in ["ratio", "frequency_100"]:
+            for c4_rate in [1, 2]:
                 for verb_form in ["original"]:
-                    # for vec_type in ["mask", "wm", "word"]:
-                    for vec_type in ["wm"]:
+                    for vec_type in ["mask", "wm", "word"]:
                         txt = make_table(
                             verb_form=verb_form,
                             add_method=add_method,

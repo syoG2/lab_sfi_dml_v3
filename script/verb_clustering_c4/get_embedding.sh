@@ -9,20 +9,20 @@ settings=(all_3_0 all_3_1 all_3_2)
 pretrained_model_name=bert-base-uncased
 
 vec_types=(mask word)
-# vec_types=(mask)
-# vec_types=(word)
+vec_types=(mask)
+vec_types=(word)
 
 model_names=(adacos_classification softmax_classification vanilla)
-# model_names=(adacos_classification)
-# model_names=(softmax_classification)
-# model_names=(vanilla)
+model_names=(adacos_classification)
+model_names=(softmax_classification)
+model_names=(vanilla)
 run_numbers=(00)
 
 # model_names=(arcface_classification siamese_distance triplet_distance)
-model_names=(arcface_classification)
-model_names=(siamese_distance)
-model_names=(triplet_distance)
-run_numbers=(00 01 02 03)
+# model_names=(arcface_classification)
+# model_names=(siamese_distance)
+# model_names=(triplet_distance)
+# run_numbers=(00 01 02 03)
 
 
 splits=(train dev test test-c4 test-framenet) # add_method=c4firstの場合
@@ -32,7 +32,7 @@ splits=(train dev test test-c4 test-framenet) # add_method=c4firstの場合
 verb_form=original
 
 add_method=frequency_100
-add_method=ratio
+# add_method=ratio
 
 # add_key=lu_name
 add_key=verb
@@ -41,7 +41,7 @@ add_key=verb
 # clustering_dataset=mix
 
 c4_rate=2
-device=cuda:3
+device=cuda:1
 
 for setting in "${settings[@]}"; do
     for model_name in "${model_names[@]}"; do

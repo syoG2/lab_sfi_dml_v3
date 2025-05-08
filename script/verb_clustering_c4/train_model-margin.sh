@@ -17,8 +17,8 @@ vec_types=(word mask)
 model_name=arcface_classification
 margins=(0.01 0.02 0.05 0.1)
 
-model_name=siamese_distance
-margins=(0.1 0.2 0.5 1.0)
+# model_name=siamese_distance
+# margins=(0.1 0.2 0.5 1.0)
 
 model_name=triplet_distance
 margins=(0.1 0.2 0.5 1.0)
@@ -26,7 +26,7 @@ margins=(0.1 0.2 0.5 1.0)
 
 run_numbers=(00 01 02 03)
 
-device=cuda:2
+device=cuda:3
 
 # c4_rateの値はどれでも良い
 c4_rate=0
